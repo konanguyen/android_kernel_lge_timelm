@@ -1381,6 +1381,7 @@ int __init arch_ioremap_p4d_supported(void)
 	return 0;
 }
 
+
 int __init arch_ioremap_pud_supported(void)
 {
 	/*
