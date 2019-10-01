@@ -4429,6 +4429,7 @@ static void wait_oob_link_list_ready(struct r8152 *tp)
 {
 	u32 ocp_data;
 	int i;
+
 	for (i = 0; i < 1000; i++) {
 		ocp_data = ocp_read_byte(tp, MCU_TYPE_PLA, PLA_OOB_CTRL);
 		if (ocp_data & LINK_LIST_READY)
@@ -4436,6 +4437,7 @@ static void wait_oob_link_list_ready(struct r8152 *tp)
 		usleep_range(1000, 2000);
 	}
 }
+
 static void r8156b_wait_loading_flash(struct r8152 *tp)
 {
 	if ((ocp_read_word(tp, MCU_TYPE_PLA, 0xd3ae) & BIT(1)) &&
@@ -4448,6 +4450,7 @@ static void r8156b_wait_loading_flash(struct r8152 *tp)
 		}
 	}
 }
+
 static void r8152b_exit_oob(struct r8152 *tp)
 {
 	u32 ocp_data;
@@ -4469,6 +4472,7 @@ static void r8152b_exit_oob(struct r8152 *tp)
 	ocp_data |= RE_INIT_LL;
 	ocp_write_word(tp, MCU_TYPE_PLA, PLA_SFF_STS_7, ocp_data);
 	wait_oob_link_list_ready(tp);
+
 	rtl8152_nic_reset(tp);
 	/* rx share fifo credit full threshold */
 	ocp_write_dword(tp, MCU_TYPE_PLA, PLA_RXFIFO_CTRL0, RXFIFO_THR1_NORMAL);
@@ -4501,6 +4505,7 @@ static void r8152b_exit_oob(struct r8152 *tp)
 static void r8152b_enter_oob(struct r8152 *tp)
 {
 	u32 ocp_data;
+
 	ocp_data = ocp_read_byte(tp, MCU_TYPE_PLA, PLA_OOB_CTRL);
 	ocp_data &= ~NOW_IS_OOB;
 	ocp_write_byte(tp, MCU_TYPE_PLA, PLA_OOB_CTRL, ocp_data);
