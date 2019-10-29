@@ -711,8 +711,6 @@ static const struct midr_range arm64_harden_el2_vectors[] = {
 	{},
 };
 
-#endif
-
 #ifdef CONFIG_ARM64_ERRATUM_858921
 
 static const struct midr_range arm64_workaround_858921_cpus[] = {
@@ -737,6 +735,26 @@ static const struct midr_range arm64_workaround_1188873_cpus[] = {
 
 #endif
 
+#ifdef CONFIG_ARM64_WORKAROUND_REPEAT_TLBI
+static const struct arm64_cpu_capabilities arm64_repeat_tlbi_list[] = {
+#ifdef CONFIG_QCOM_FALKOR_ERRATUM_1009
+	{
+		ERRATA_MIDR_REV(MIDR_QCOM_FALKOR_V1, 0, 0)
+	},
+	{
+		.midr_range.model = MIDR_QCOM_KRYO,
+		.matches = is_kryo_midr,
+	},
+#endif
+#ifdef CONFIG_ARM64_ERRATUM_1286807
+	{
+		ERRATA_MIDR_RANGE(MIDR_CORTEX_A76, 0, 0, 3, 0),
+	},
+#endif
+	{},
+};
+#endif
+
 #ifdef CONFIG_ARM64_ERRATUM_845719
 
 static const struct midr_range arm64_workaround_845719_cpus[] = {
@@ -746,7 +764,6 @@ static const struct midr_range arm64_workaround_845719_cpus[] = {
 	MIDR_RANGE(MIDR_KRYO2XX_SILVER, 0xA, 0x4, 0xA, 0x4),
 	{},
 };
-
 #endif
 
 #ifdef CONFIG_ARM64_ERRATUM_1742098
@@ -918,7 +935,9 @@ const struct arm64_cpu_capabilities arm64_errata[] = {
 	{
 		.desc = "Qualcomm Technologies Falkor erratum 1009",
 		.capability = ARM64_WORKAROUND_REPEAT_TLBI,
-		ERRATA_MIDR_REV(MIDR_QCOM_FALKOR_V1, 0, 0),
+		.type = ARM64_CPUCAP_LOCAL_CPU_ERRATUM,
+		.matches = multi_entry_cap_matches,
+		.match_list = arm64_repeat_tlbi_list,
 	},
 #endif
 #ifdef CONFIG_ARM64_ERRATUM_858921
