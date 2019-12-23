@@ -1333,6 +1333,7 @@ EXPORT_SYMBOL_GPL(add_disk_randomness);
  *
  *********************************************************************/
 
+/*
 
  * This function decides how many bytes to actually take from the
  * given pool, and also debits the entropy count accordingly.
