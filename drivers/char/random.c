@@ -712,7 +712,8 @@ retry:
 	}
 
 	if (WARN_ON(entropy_count < 0)) {
-		pr_warn("negative entropy/overflow: pool %s count %d\n",
+		pr_warn("random: negative entropy/overflow: pool %s count %d\n",
+
 			r->name, entropy_count);
 		entropy_count = 0;
 	} else if (entropy_count > pool_size)
@@ -1360,7 +1361,8 @@ retry:
 		ibytes = 0;
 
 	if (WARN_ON(entropy_count < 0)) {
-		pr_warn("negative entropy count: pool %s count %d\n",
+		pr_warn("random: negative entropy count: pool %s count %d\n",
+
 			r->name, entropy_count);
 		entropy_count = 0;
 	}
