@@ -141,35 +141,37 @@ struct glink_core_rx_intent {
 struct qcom_glink {
 	struct device *dev;
 
-	const char *name;
+	struct qcom_glink_pipe *rx_pipe;
+	struct qcom_glink_pipe *tx_pipe;
+
+	struct irq_chip irq_chip;
+	struct irq_domain *irq_domain;
+
+	struct spinlock lock;
+
+	struct idr lcids;
+	struct idr rcids;
+	struct spinlock idr_lock;
+
+	struct list_head rx_queue;
+	struct spinlock rx_lock;
+
+	struct work_struct rx_work;
+#ifdef CONFIG_LGE_PM
+	struct work_struct irq_work;
+#endif
+
+	struct mutex tx_lock;
+
+	enum glink_focus focus;
 
 	struct mbox_client mbox_client;
 	struct mbox_chan *mbox_chan;
 
-	struct qcom_glink_pipe *rx_pipe;
-	struct qcom_glink_pipe *tx_pipe;
+	struct list_head node;
+	struct completion node_created;
+	struct completion open_ack;
 
-	int irq;
-	char irqname[GLINK_NAME_SIZE];
-
-	struct kthread_worker kworker;
-	struct task_struct *task;
-
-	struct work_struct rx_work;
-
-#ifdef CONFIG_LGE_PM
-	struct work_struct irq_work;
-#endif
-	spinlock_t rx_lock;
-	struct list_head rx_queue;
-
-	spinlock_t tx_lock;
-
-	spinlock_t idr_lock;
-	struct idr lcids;
-	struct idr rcids;
-
-	atomic_t in_reset;
 	unsigned long features;
 
 	bool intentless;
@@ -442,7 +444,6 @@ static int qcom_glink_tx(struct qcom_glink *glink,
 			ret = -ECONNRESET;
 			goto out;
 		}
-
 		if (qcom_glink_tx_avail(glink) >= tlen)
 			glink->sent_read_notify = false;
 	}
@@ -1241,13 +1242,11 @@ static irqreturn_t qcom_glink_native_intr(int irq, void *data)
 	unsigned int cmd;
 	int ret = 0;
 
-
 #ifdef CONFIG_LGE_PM
 	if (suspend_debug_irq_pin()) {
 		schedule_work(&glink->irq_work);
 	}
 #endif
-
 	/* To wakeup any blocking writers */
 	wake_up_all(&glink->tx_avail_notify);
 
@@ -1863,6 +1862,9 @@ static void qcom_glink_rx_close_ack(struct qcom_glink *glink, unsigned int lcid)
 	struct rpmsg_channel_info chinfo;
 	struct glink_channel *channel;
 	unsigned long flags;
+
+	/* To wakeup any blocking writers */
+	wake_up_all(&glink->tx_avail_notify);
 
 	spin_lock_irqsave(&glink->idr_lock, flags);
 	channel = idr_find(&glink->lcids, lcid);
