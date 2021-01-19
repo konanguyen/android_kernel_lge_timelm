@@ -2590,15 +2590,8 @@ handle_err:
 	/*
 	 * Check if someone else fixed it for us:
 	 */
-<<<<<<< HEAD
 	if (pi_state->owner != oldowner)
 		return argowner == current;
-=======
-	if (pi_state->owner != oldowner) {
-		ret = argowner == current;
-		goto out_unlock;
-	}
->>>>>>> 72f38fffa (futex: Ensure the correct return value from futex_lock_pi())
 
 	/* Retry if err was -EAGAIN or the fault in succeeded */
 	if (!err)
@@ -2624,7 +2617,6 @@ handle_err:
 
 	return err;
 }
-
 static int fixup_pi_state_owner(u32 __user *uaddr, struct futex_q *q,
 				struct task_struct *argowner)
 {
