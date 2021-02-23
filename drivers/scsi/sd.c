@@ -3464,12 +3464,11 @@ static void sd_probe_async(void *data, async_cookie_t cookie)
 	}
 #endif
 
-	device_add_disk(dev, gd);
+	device_add_disk(dev, gd, NULL);
 
 #ifdef CONFIG_LFS_SCSI_USB_HOST_NOTIFY
 	sdkp->prv_media_present = sdkp->media_present;
 #endif
-
 	if (sdkp->capacity)
 		sd_dif_config_host(sdkp);
 
