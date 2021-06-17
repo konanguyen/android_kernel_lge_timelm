@@ -1596,6 +1596,8 @@ skip_clk_reset:
 	if (!dwc->dwc_ipc_log_ctxt)
 		dev_err(dwc->dev, "Error getting ipc_log_ctxt\n");
 
+	dwc3_debugfs_init(dwc);
+
 	snprintf(dma_ipc_log_ctx_name, sizeof(dma_ipc_log_ctx_name),
 					"%s.ep_events", dev_name(dwc->dev));
 	dwc->dwc_dma_ipc_log_ctxt = ipc_log_context_create(2 * NUM_LOG_PAGES,
@@ -1608,9 +1610,7 @@ skip_clk_reset:
 	count++;
 
 	pm_runtime_allow(dev);
-	dwc3_debugfs_init(dwc);
 	return 0;
-
 err3:
 	dwc3_free_scratch_buffers(dwc);
 err2:
