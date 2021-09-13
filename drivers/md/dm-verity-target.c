@@ -707,7 +707,7 @@ static int verity_verify_io(struct dm_verity_io *io)
 		else if (verity_fec_decode(v, io, DM_VERITY_BLOCK_TYPE_DATA,
 					   cur_block, NULL, &start) == 0)
 			continue;
-		else{
+		else {
 #ifdef DM_VERITY_MEMORY_DUMP
 			DMERR("data block %lu is corrupted", io->block + b);
 			DMERR("iter->sector(%lu), size(%ul), idx(%ul), bvec_done(%ul)",
@@ -748,9 +748,10 @@ static int verity_verify_io(struct dm_verity_io *io)
 				return -EIO;
 			}
 			if (verity_handle_err(v, DM_VERITY_BLOCK_TYPE_DATA,
-					   cur_block))
+					      cur_block))
 				return -EIO;
 		}
+
 	}
 
 	return 0;
