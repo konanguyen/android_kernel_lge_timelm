@@ -1700,6 +1700,7 @@ static void aio_poll_complete_work(struct work_struct *work)
 		list_del_init(&req->wait.entry);
 		poll_iocb_unlock_wq(req);
 	} /* else, POLLFREE has freed the waitqueue, so we must complete */
+
 	list_del_init(&iocb->ki_list);
 	iocb->ki_res.res = mangle_poll(mask);
 	spin_unlock_irq(&ctx->ctx_lock);
@@ -1721,6 +1722,7 @@ static int aio_poll_cancel(struct kiocb *iocb)
 		}
 		poll_iocb_unlock_wq(req);
 	} /* else, the request was force-cancelled by POLLFREE already */
+
 
 	return 0;
 }
@@ -1774,6 +1776,7 @@ static int aio_poll_wake(struct wait_queue_entry *wait, unsigned mode, int sync,
 		 * not actually be complete yet (we won't know until vfs_poll()
 		 * is called), and we must not miss any wakeups.  POLLFREE is an
 		 * exception to this; see below.
+
 		 */
 		if (req->work_scheduled) {
 			req->work_need_resched = true;
@@ -1781,7 +1784,6 @@ static int aio_poll_wake(struct wait_queue_entry *wait, unsigned mode, int sync,
 			schedule_work(&req->work);
 			req->work_scheduled = true;
 		}
-
 		/*
 		 * If the waitqueue is being freed early but we can't complete
 		 * the request inline, we have to tear down the request as best
@@ -1803,6 +1805,7 @@ static int aio_poll_wake(struct wait_queue_entry *wait, unsigned mode, int sync,
 			 */
 			smp_store_release(&req->head, NULL);
 		}
+
 	}
 	return 1;
 }
@@ -1871,6 +1874,7 @@ static ssize_t aio_poll(struct aio_kiocb *aiocb, const struct iocb *iocb)
 		bool on_queue = poll_iocb_lock_wq(req);
 
 		if (!on_queue || req->work_scheduled) {
+
 			/*
 			 * aio_poll_wake() already either scheduled the async
 			 * completion work, or completed the request inline.
@@ -1887,6 +1891,7 @@ static ssize_t aio_poll(struct aio_kiocb *aiocb, const struct iocb *iocb)
 			/* Cancel if possible (may be too late though). */
 			WRITE_ONCE(req->cancelled, true);
 		} else if (on_queue) {
+
 			/*
 			 * Actually waiting for an event, so add the request to
 			 * active_reqs so that it can be cancelled if needed.
