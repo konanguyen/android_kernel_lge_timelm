@@ -1025,7 +1025,6 @@ alternative_else_nop_endif
 	.macro tramp_ventry, vector_start, regsize, kpti, bhb
 	.align	7
 1:
-	.if	\kpti == 1
 	.if	\regsize == 64
 	msr	tpidrro_el0, x30	// Restored in kernel_ventry
 	.endif
@@ -1043,6 +1042,8 @@ alternative_else_nop_endif
 	isb
 	.endif // \bhb == BHB_MITIGATION_INSN
 
+=======
+>>>>>>> 901c0a20a (arm64: entry: Add non-kpti __bp_harden_el1_vectors for mitigations)
 	.if	\kpti == 1
 	/*
 	 * Defend against branch aliasing attacks by pushing a dummy
@@ -1158,7 +1159,6 @@ __entry_tramp_data___sdei_asm_handler:
  * Exception vectors for spectre mitigations on entry from EL1 when
  * kpti is not in use.
  */
-
 	.macro generate_el1_vector, bhb
 .Lvector_start\@:
 	kernel_ventry	1, sync_invalid		// Synchronous EL1t
@@ -1187,6 +1187,15 @@ ENTRY(__bp_harden_el1_vectors)
 	generate_el1_vector	bhb=BHB_MITIGATION_FW
 	generate_el1_vector	bhb=BHB_MITIGATION_INSN
 #endif /* CONFIG_MITIGATE_SPECTRE_BRANCH_HISTORY */
+
+	.endr
+	.endm
+
+	.pushsection ".entry.text", "ax"
+	.align	11
+ENTRY(__bp_harden_el1_vectors)
+	generate_el1_vector
+>>>>>>> 901c0a20a (arm64: entry: Add non-kpti __bp_harden_el1_vectors for mitigations)
 END(__bp_harden_el1_vectors)
 	.popsection
 
