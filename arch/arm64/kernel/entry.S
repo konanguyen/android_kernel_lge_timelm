@@ -1042,8 +1042,6 @@ alternative_else_nop_endif
 	isb
 	.endif // \bhb == BHB_MITIGATION_INSN
 
-=======
->>>>>>> 901c0a20a (arm64: entry: Add non-kpti __bp_harden_el1_vectors for mitigations)
 	.if	\kpti == 1
 	/*
 	 * Defend against branch aliasing attacks by pushing a dummy
@@ -1187,17 +1185,9 @@ ENTRY(__bp_harden_el1_vectors)
 	generate_el1_vector	bhb=BHB_MITIGATION_FW
 	generate_el1_vector	bhb=BHB_MITIGATION_INSN
 #endif /* CONFIG_MITIGATE_SPECTRE_BRANCH_HISTORY */
-
-	.endr
-	.endm
-
-	.pushsection ".entry.text", "ax"
-	.align	11
-ENTRY(__bp_harden_el1_vectors)
-	generate_el1_vector
->>>>>>> 901c0a20a (arm64: entry: Add non-kpti __bp_harden_el1_vectors for mitigations)
 END(__bp_harden_el1_vectors)
 	.popsection
+
 
 
 /*
