@@ -1023,9 +1023,9 @@ alternative_else_nop_endif
 #define BHB_MITIGATION_INSN	3
 
 	.macro tramp_ventry, vector_start, regsize, kpti, bhb
-
 	.align	7
 1:
+	.if	\kpti == 1
 	.if	\regsize == 64
 	msr	tpidrro_el0, x30	// Restored in kernel_ventry
 	.endif
@@ -1055,12 +1055,9 @@ alternative_else_nop_endif
 	tramp_map_kernel	x30
 
 alternative_insn isb, nop, ARM64_WORKAROUND_QCOM_FALKOR_E1003
-<<<<<<< HEAD
 	tramp_data_read_var	x30, vectors
 	prfm	plil1strm, [x30, #(1b - \vector_start)]
 	msr	vbar_el1, x30
-	add	x30, x30, #(1b - \vector_start + 4)
-
 	isb
 	.else
 	ldr	x30, =vectors
@@ -1101,7 +1098,6 @@ alternative_endif
 	.endm
 
 	.macro	generate_tramp_vector, kpti, bhb
-
 .Lvector_start\@:
 	.space	0x400
 
@@ -1128,24 +1124,8 @@ ENTRY(tramp_vectors)
 	generate_tramp_vector	kpti=1, bhb=BHB_MITIGATION_INSN
 #endif /* CONFIG_MITIGATE_SPECTRE_BRANCH_HISTORY */
 	generate_tramp_vector	kpti=1, bhb=BHB_MITIGATION_NONE
-=======
-	tramp_ventry	.Lvector_start\@, 64
-	.endr
-	.rept	4
-	tramp_ventry	.Lvector_start\@, 32
-	.endr
-	.endm
-
-#ifdef CONFIG_UNMAP_KERNEL_AT_EL0
-/*
- * Exception vectors trampoline.
- */
-	.pushsection ".entry.tramp.text", "ax"
-	.align	11
-ENTRY(tramp_vectors)
-	generate_tramp_vector
->>>>>>> af484e69b (arm64: entry: Don't assume tramp_vectors is the start of the vectors)
 END(tramp_vectors)
+
 
 ENTRY(tramp_exit_native)
 	tramp_exit
