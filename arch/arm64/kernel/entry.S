@@ -1023,6 +1023,7 @@ alternative_else_nop_endif
 #define BHB_MITIGATION_INSN	3
 
 	.macro tramp_ventry, vector_start, regsize, kpti, bhb
+
 	.align	7
 1:
 	.if	\regsize == 64
@@ -1052,6 +1053,7 @@ alternative_else_nop_endif
 	b	.
 2:
 	tramp_map_kernel	x30
+
 alternative_insn isb, nop, ARM64_WORKAROUND_QCOM_FALKOR_E1003
 	tramp_data_read_var	x30, vectors
 	prfm	plil1strm, [x30, #(1b - \vector_start)]
@@ -1282,6 +1284,7 @@ ENTRY(__sdei_asm_entry_trampoline)
 1:	str	x4, [x1, #(SDEI_EVENT_INTREGS + S_ORIG_ADDR_LIMIT)]
 
 	tramp_data_read_var	x4, __sdei_asm_handler
+
 	br	x4
 ENDPROC(__sdei_asm_entry_trampoline)
 NOKPROBE(__sdei_asm_entry_trampoline)
