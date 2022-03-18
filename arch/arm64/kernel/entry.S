@@ -1055,6 +1055,7 @@ alternative_else_nop_endif
 	tramp_map_kernel	x30
 
 alternative_insn isb, nop, ARM64_WORKAROUND_QCOM_FALKOR_E1003
+<<<<<<< HEAD
 	tramp_data_read_var	x30, vectors
 	prfm	plil1strm, [x30, #(1b - \vector_start)]
 	msr	vbar_el1, x30
@@ -1100,6 +1101,7 @@ alternative_endif
 	.endm
 
 	.macro	generate_tramp_vector, kpti, bhb
+
 .Lvector_start\@:
 	.space	0x400
 
@@ -1126,6 +1128,18 @@ ENTRY(tramp_vectors)
 	generate_tramp_vector	kpti=1, bhb=BHB_MITIGATION_INSN
 #endif /* CONFIG_MITIGATE_SPECTRE_BRANCH_HISTORY */
 	generate_tramp_vector	kpti=1, bhb=BHB_MITIGATION_NONE
+=======
+	tramp_ventry	.Lvector_start\@, 64
+	.endr
+	.rept	4
+	tramp_ventry	.Lvector_start\@, 32
+	.endr
+	.endm
+
+	.align	11
+ENTRY(tramp_vectors)
+	generate_tramp_vector
+>>>>>>> af484e69b (arm64: entry: Don't assume tramp_vectors is the start of the vectors)
 END(tramp_vectors)
 
 ENTRY(tramp_exit_native)
