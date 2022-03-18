@@ -574,4 +574,5 @@ void spectre_bhb_enable_mitigation(const struct arm64_cpu_capabilities *__unused
 
 #endif /* __ASSEMBLY__ */
 
+
 #endif
