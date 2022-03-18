@@ -1153,6 +1153,7 @@ config COMPAT_VDSO
 	  to seamlessly take advantage of this.
 
 config MITIGATE_SPECTRE_BRANCH_HISTORY
+
 	bool "Mitigate Spectre style attacks against branch history" if EXPERT
 	default y
 	help

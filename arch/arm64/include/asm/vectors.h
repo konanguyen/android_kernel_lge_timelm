@@ -8,6 +8,7 @@
 #include <linux/bug.h>
 #include <linux/percpu.h>
 
+#include <asm/fixmap.h>
 #include <asm/mmu.h>
 
 extern char vectors[];
