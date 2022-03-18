@@ -71,6 +71,7 @@
 	.macro kernel_ventry, el, label, regsize = 64
 	.align 7
 .Lventry_start\@:
+
 	.if	\el == 0
 	/*
 	 * This must be the first instruction of the EL0 vector entries. It is
