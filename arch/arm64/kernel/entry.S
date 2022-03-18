@@ -1149,6 +1149,7 @@ __entry_tramp_data___sdei_asm_handler:
 #endif /* CONFIG_ARM_SDE_INTERFACE */
 	__entry_tramp_data_this_cpu_vector:
 	.quad	this_cpu_vector
+
 	.popsection				// .rodata
 #endif /* CONFIG_RANDOMIZE_BASE */
 #endif /* CONFIG_UNMAP_KERNEL_AT_EL0 */
