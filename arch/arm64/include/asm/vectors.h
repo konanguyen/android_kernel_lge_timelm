@@ -8,7 +8,6 @@
 #include <linux/bug.h>
 #include <linux/percpu.h>
 
-#include <asm/fixmap.h>
 #include <asm/mmu.h>
 
 extern char vectors[];
@@ -52,6 +51,7 @@ enum arm64_bp_harden_el1_vectors {
 #define EL1_VECTOR_BHB_FW		-1
 #define EL1_VECTOR_BHB_CLEAR_INSN	-1
 #endif /* !CONFIG_MITIGATE_SPECTRE_BRANCH_HISTORY */
+
 
 /* The vectors to use on return from EL0. e.g. to remap the kernel */
 DECLARE_PER_CPU_READ_MOSTLY(const char *, this_cpu_vector);
