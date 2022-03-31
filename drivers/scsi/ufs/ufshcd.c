@@ -296,6 +296,7 @@ static void ufshcd_hex_dump(struct ufs_hba *hba, const char * const str,
 		       16, 4, buf, len, false);
 }
 
+
 enum {
 	UFSHCD_MAX_CHANNEL	= 0,
 	UFSHCD_MAX_ID		= 1,
