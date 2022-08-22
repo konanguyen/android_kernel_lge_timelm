@@ -227,6 +227,9 @@ static bool clk_core_rate_is_protected(struct clk_core *core)
 	return core->protect_count;
 }
 
+static int clk_core_prepare_enable(struct clk_core *core);
+static void clk_core_disable_unprepare(struct clk_core *core);
+
 static bool clk_core_is_prepared(struct clk_core *core)
 {
 	bool ret = false;
@@ -239,7 +242,11 @@ static bool clk_core_is_prepared(struct clk_core *core)
 		return core->prepare_count;
 
 	if (!clk_pm_runtime_get(core)) {
+		if (core->flags & CLK_OPS_PARENT_ENABLE)
+			clk_core_prepare_enable(core->parent);
 		ret = core->ops->is_prepared(core->hw);
+		if (core->flags & CLK_OPS_PARENT_ENABLE)
+			clk_core_disable_unprepare(core->parent);
 		clk_pm_runtime_put(core);
 	}
 
@@ -275,7 +282,13 @@ static bool clk_core_is_enabled(struct clk_core *core)
 		}
 	}
 
+	if (core->flags & CLK_OPS_PARENT_ENABLE)
+		clk_core_prepare_enable(core->parent);
+
 	ret = core->ops->is_enabled(core->hw);
+
+	if (core->flags & CLK_OPS_PARENT_ENABLE)
+		clk_core_disable_unprepare(core->parent);
 done:
 	if (core->rpm_enabled)
 		pm_runtime_put(core->dev);
@@ -992,6 +1005,9 @@ int clk_rate_exclusive_get(struct clk *clk)
 }
 EXPORT_SYMBOL_GPL(clk_rate_exclusive_get);
 
+static int clk_core_enable_lock(struct clk_core *core);
+static void clk_core_disable_lock(struct clk_core *core);
+
 static void clk_core_unprepare(struct clk_core *core)
 {
 	lockdep_assert_held(&prepare_lock);
@@ -1015,6 +1031,9 @@ static void clk_core_unprepare(struct clk_core *core)
 
 	WARN(core->enable_count > 0, "Unpreparing enabled %s\n", core->name);
 
+	if (core->flags & CLK_OPS_PARENT_ENABLE)
+		clk_core_enable_lock(core->parent);
+
 	trace_clk_unprepare(core);
 
 	if (core->ops->unprepare)
@@ -1030,29 +1049,32 @@ static void clk_core_unprepare(struct clk_core *core)
 		core->new_vdd_class_vote = 0;
 	}
 
+	if (core->flags & CLK_OPS_PARENT_ENABLE)
+		clk_core_disable_lock(core->parent);
 	clk_core_unprepare(core->parent);
 }
 
 static void clk_core_unprepare_lock(struct clk_core *core)
 {
+	unsigned long flags;
+
 	clk_prepare_lock();
 	clk_core_unprepare(core);
 	clk_prepare_unlock();
 }
 
 /**
- * clk_unprepare - undo preparation of a clock source
- * @clk: the clk being unprepared
+ * clk_unprepare - de-activate a clock source
+ * @clk: the clock source to de-activate
  *
- * clk_unprepare may sleep, which differentiates it from clk_disable.  In a
- * simple case, clk_unprepare can be used instead of clk_disable to gate a clk
- * if the operation may sleep.  One example is a clk which is accessed over
- * I2c.  In the complex case a clk gate operation may require a fast and a slow
- * part.  It is this reason that clk_unprepare and clk_disable are not mutually
- * exclusive.  In fact clk_disable must be called before clk_unprepare.
+ * clk_unprepare may sleep, which differentiates it from clk_disable.  Users
+ * must call clk_unprepare when finished with a clock source; after
+ * clk_unprepare returns, any operation with the clock is invalid.  	 *
+ * Context: prepares prepare_lock held.
  */
 void clk_unprepare(struct clk *clk)
 {
+
 	if (IS_ERR_OR_NULL(clk))
 		return;
 
@@ -1070,31 +1092,26 @@ static int clk_core_prepare(struct clk_core *core)
 		return 0;
 
 	if (core->prepare_count == 0) {
-		ret = clk_pm_runtime_get(core);
-		if (ret)
-			return ret;
-
 		ret = clk_core_prepare(core->parent);
 		if (ret)
-			goto runtime_put;
+			return ret;
+
+		ret = clk_pm_runtime_get(core);
+		if (ret)
+			goto unprepare;
+
+		if (core->flags & CLK_OPS_PARENT_ENABLE)
+			clk_core_enable_lock(core->parent);
 
 		trace_clk_prepare(core);
-
-		ret = clk_vote_rate_vdd(core, core->rate);
-		if (ret) {
-			clk_core_unprepare(core->parent);
-			return ret;
-		}
-		if (core->vdd_class) {
-			core->vdd_class_vote
-				= clk_find_vdd_level(core, core->rate);
-			core->new_vdd_class_vote = core->vdd_class_vote;
-		}
 
 		if (core->ops->prepare)
 			ret = core->ops->prepare(core->hw);
 
 		trace_clk_prepare_complete(core);
+
+		if (core->flags & CLK_OPS_PARENT_ENABLE)
+			clk_core_disable_lock(core->parent);
 
 		if (ret) {
 			clk_unvote_rate_vdd(core, core->rate);
@@ -1103,6 +1120,7 @@ static int clk_core_prepare(struct clk_core *core)
 			goto unprepare;
 		}
 	}
+
 
 	core->prepare_count++;
 
