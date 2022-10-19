@@ -1536,8 +1536,6 @@ void udpv6_destroy_sock(struct sock *sk)
 		if (up->encap_enabled)
 			static_branch_dec(&udpv6_encap_needed_key);
 	}
-
-	inet6_destroy_sock(sk);
 }
 
 /*
