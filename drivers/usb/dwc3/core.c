@@ -1638,7 +1638,9 @@ skip_clk_reset:
 	dwc->index = count;
 	count++;
 
+	dma_set_max_seg_size(dev, UINT_MAX);
 	pm_runtime_allow(dev);
+
 	return 0;
 
 err5:
