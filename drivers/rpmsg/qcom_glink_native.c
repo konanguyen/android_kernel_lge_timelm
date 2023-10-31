@@ -1735,7 +1735,9 @@ static void qcom_glink_rpdev_release(struct device *dev)
 {
 	struct rpmsg_device *rpdev = to_rpmsg_device(dev);
 
+	kfree(rpdev->driver_override);
 	kfree(rpdev);
+
 }
 
 static int qcom_glink_rx_open(struct qcom_glink *glink, unsigned int rcid,
