@@ -418,6 +418,7 @@ static int dwc3_alloc_event_buffers(struct dwc3 *dwc, unsigned length)
 int dwc3_event_buffers_setup(struct dwc3 *dwc)
 {
 	struct dwc3_event_buffer	*evt;
+	u32				reg;
 
 	if (!dwc->ev_buf)
 		return 0;
@@ -430,7 +431,10 @@ int dwc3_event_buffers_setup(struct dwc3 *dwc)
 			upper_32_bits(evt->dma));
 	dwc3_writel(dwc->regs, DWC3_GEVNTSIZ(0),
 			DWC3_GEVNTSIZ_SIZE(evt->length));
-	dwc3_writel(dwc->regs, DWC3_GEVNTCOUNT(0), 0);
+
+	/* Clear any stale event */
+	reg = dwc3_readl(dwc->regs, DWC3_GEVNTCOUNT(0));
+	dwc3_writel(dwc->regs, DWC3_GEVNTCOUNT(0), reg);
 
 	/* setup GSI related event buffers */
 	dwc3_notify_event(dwc, DWC3_GSI_EVT_BUF_SETUP, 0);
@@ -439,31 +443,27 @@ int dwc3_event_buffers_setup(struct dwc3 *dwc)
 
 void dwc3_event_buffers_cleanup(struct dwc3 *dwc)
 {
-	struct dwc3_event_buffer	*evt;
-	u32				reg;
+	struct dwc3_event_buffer *evt;
+	u32 reg;
 
 	if (!dwc->ev_buf)
-		return;
-	/*
-	 * Exynos platforms may not be able to access event buffer if the
-	 * controller failed to halt on dwc3_core_exit().
-	 */
-	reg = dwc3_readl(dwc->regs, DWC3_DSTS);
-	if (!(reg & DWC3_DSTS_DEVCTRLHLT))
 		return;
 
 	evt = dwc->ev_buf;
 
-	evt->lpos = 0;
+	if (dwc->pullups_connected) {
+		dwc3_writel(dwc->regs, DWC3_GEVNTADRLO(0), 0);
+		dwc3_writel(dwc->regs, DWC3_GEVNTADRHI(0), 0);
+		dwc3_writel(dwc->regs, DWC3_GEVNTSIZ(0), DWC3_GEVNTSIZ_INTMASK
+				| DWC3_GEVNTSIZ_SIZE(0));
 
-	dwc3_writel(dwc->regs, DWC3_GEVNTADRLO(0), 0);
-	dwc3_writel(dwc->regs, DWC3_GEVNTADRHI(0), 0);
-	dwc3_writel(dwc->regs, DWC3_GEVNTSIZ(0), DWC3_GEVNTSIZ_INTMASK
-			| DWC3_GEVNTSIZ_SIZE(0));
-	dwc3_writel(dwc->regs, DWC3_GEVNTCOUNT(0), 0);
+		/* Clear any stale event */
+		reg = dwc3_readl(dwc->regs, DWC3_GEVNTCOUNT(0));
+		dwc3_writel(dwc->regs, DWC3_GEVNTCOUNT(0), reg);
 
-	/* cleanup GSI related event buffers */
-	dwc3_notify_event(dwc, DWC3_GSI_EVT_BUF_CLEANUP, 0);
+		/* cleanup GSI related event buffers */
+		dwc3_notify_event(dwc, DWC3_GSI_EVT_BUF_CLEANUP, 0);
+	}
 }
 
 static int dwc3_alloc_scratch_buffers(struct dwc3 *dwc)
@@ -1912,7 +1912,11 @@ static int dwc3_runtime_resume(struct device *dev)
 
 	switch (dwc->current_dr_role) {
 	case DWC3_GCTL_PRTCAP_DEVICE:
-		dwc3_gadget_process_pending_events(dwc);
+		if (dwc->pending_events) {
+			pm_runtime_put(dwc->dev);
+			dwc->pending_events = false;
+			enable_irq(dwc->irq_gadget);
+		}
 		break;
 	case DWC3_GCTL_PRTCAP_HOST:
 	default:
@@ -2018,6 +2022,12 @@ static void dwc3_complete(struct device *dev)
 static const struct dev_pm_ops dwc3_dev_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(dwc3_suspend, dwc3_resume)
 	.complete = dwc3_complete,
+
+	/*
+	 * Runtime suspend halts the controller on disconnection. It relies on
+	 * platforms with custom connection notification to start the controller
+	 * again.
+	 */
 	SET_RUNTIME_PM_OPS(dwc3_runtime_suspend, dwc3_runtime_resume,
 			dwc3_runtime_idle)
 };
