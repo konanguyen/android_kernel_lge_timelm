@@ -593,15 +593,6 @@ static inline bool f2fs_is_checkpoint_ready(struct f2fs_sb_info *sbi)
 	return false;
 }
 
-static inline bool f2fs_is_checkpoint_ready(struct f2fs_sb_info *sbi)
-{
-	if (likely(!is_sbi_flag_set(sbi, SBI_CP_DISABLED)))
-		return true;
-	if (likely(!has_not_enough_free_secs(sbi, 0, 0)))
-		return true;
-	return false;
-}
-
 static inline bool excess_prefree_segs(struct f2fs_sb_info *sbi)
 {
 	return prefree_segments(sbi) > SM_I(sbi)->rec_prefree_segments;

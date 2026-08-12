@@ -1296,7 +1296,7 @@ static int dx_make_map(struct inode *dir, struct buffer_head *bh,
 
 	while ((char *) de < base + buflen) {
 		if (ext4_check_dir_entry(dir, NULL, de, bh, base, buflen,
-					 ((char *)de) - base))
+					 0, ((char *)de) - base))
 			return -EFSCORRUPTED;
 		if (de->name_len && de->inode) {
 			if (ext4_hash_in_dirent(dir))
@@ -1515,7 +1515,7 @@ int ext4_search_dir(struct buffer_head *bh, char *search_buf, int buf_size,
 			/* found a match - just to be sure, do
 			 * a full check */
 			if (ext4_check_dir_entry(dir, NULL, de, bh, search_buf,
-						 buf_size, offset))
+						 buf_size, 0, offset))
 				return -EFSCORRUPTED;
 			*res_dir = de;
 			return 1;
@@ -3101,7 +3101,7 @@ bool ext4_empty_dir(struct inode *inode)
 		de = (struct ext4_dir_entry_2 *) (bh->b_data +
 					(offset & (sb->s_blocksize - 1)));
 		if (ext4_check_dir_entry(inode, NULL, de, bh,
-					 bh->b_data, bh->b_size, offset) ||
+					 bh->b_data, bh->b_size, 0, offset) ||
 		    le32_to_cpu(de->inode)) {
 			brelse(bh);
 			return false;
@@ -3668,7 +3668,7 @@ static struct buffer_head *ext4_get_first_dir_block(handle_t *handle,
 
 		de = (struct ext4_dir_entry_2 *) bh->b_data;
 		if (ext4_check_dir_entry(inode, NULL, de, bh, bh->b_data,
-					 bh->b_size, 0) ||
+					 bh->b_size, 0, 0) ||
 		    le32_to_cpu(de->inode) != inode->i_ino ||
 		    strcmp(".", de->name)) {
 			EXT4_ERROR_INODE(inode, "directory missing '.'");
@@ -3680,7 +3680,7 @@ static struct buffer_head *ext4_get_first_dir_block(handle_t *handle,
 						inode->i_sb->s_blocksize);
 		de = ext4_next_entry(de, inode->i_sb->s_blocksize);
 		if (ext4_check_dir_entry(inode, NULL, de, bh, bh->b_data,
-					 bh->b_size, offset) ||
+					 bh->b_size, 0, offset) ||
 		    le32_to_cpu(de->inode) == 0 || strcmp("..", de->name)) {
 			EXT4_ERROR_INODE(inode, "directory missing '..'");
 			brelse(bh);
@@ -3798,7 +3798,7 @@ static void ext4_resetent(handle_t *handle, struct ext4_renament *ent,
 	 * before reset old inode info.
 	 */
 	old.bh = ext4_find_entry(old.dir, &old.dentry->d_name, &old.de,
-				 &old.inlined);
+				 &old.inlined, NULL);
 	if (IS_ERR(old.bh))
 		retval = PTR_ERR(old.bh);
 	if (!old.bh)
@@ -3963,7 +3963,7 @@ static int ext4_rename(struct inode *old_dir, struct dentry *old_dentry,
 	}
 
 	old.bh = ext4_find_entry(old.dir, &old.dentry->d_name, &old.de,
-				 &old.inlined);
+				 &old.inlined, NULL);
 	if (IS_ERR(old.bh))
 		return PTR_ERR(old.bh);
 	/*

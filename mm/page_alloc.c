@@ -2717,7 +2717,7 @@ __rmqueue(struct zone *zone, unsigned int order, int migratetype,
 retry:
 	page = __rmqueue_smallest(zone, order, migratetype);
 
-	if (unlikely(!page) && __rmqueue_fallback(zone, order, migratetype))
+	if (unlikely(!page) && __rmqueue_fallback(zone, order, migratetype, alloc_flags))
 		goto retry;
 
 #ifdef CONFIG_MIGRATE_HIGHORDER
@@ -2768,7 +2768,7 @@ static int rmqueue_bulk(struct zone *zone, unsigned int order,
 		if (is_migrate_cma(migratetype))
 			page = __rmqueue_cma(zone, order);
 		else
-			page = __rmqueue(zone, order, migratetype);
+			page = __rmqueue(zone, order, migratetype, alloc_flags);
 
 		if (unlikely(page == NULL))
 			break;
@@ -2817,14 +2817,14 @@ static int rmqueue_bulk(struct zone *zone, unsigned int order,
  */
 static struct list_head *get_populated_pcp_list(struct zone *zone,
 			unsigned int order, struct per_cpu_pages *pcp,
-			int migratetype)
+			int migratetype, unsigned int alloc_flags)
 {
 	struct list_head *list = &pcp->lists[migratetype];
 
 	if (list_empty(list)) {
 		pcp->count += rmqueue_bulk(zone, order,
 				pcp->batch, list,
-				migratetype);
+				migratetype, alloc_flags);
 
 		if (list_empty(list))
 			list = NULL;
@@ -3272,7 +3272,7 @@ static struct page *__rmqueue_pcplist(struct zone *zone, int migratetype,
 		if (migratetype == MIGRATE_MOVABLE &&
 				gfp_flags & __GFP_CMA) {
 			list = get_populated_pcp_list(zone, 0, pcp,
-					get_cma_migrate_type());
+					get_cma_migrate_type(), alloc_flags);
 		}
 
 		if (list == NULL) {
@@ -3281,7 +3281,7 @@ static struct page *__rmqueue_pcplist(struct zone *zone, int migratetype,
 			 * free CMA pages.
 			 */
 			list = get_populated_pcp_list(zone, 0, pcp,
-					migratetype);
+					migratetype, alloc_flags);
 			if (unlikely(list == NULL) ||
 					unlikely(list_empty(list)))
 				return NULL;
@@ -3308,7 +3308,7 @@ static struct page *rmqueue_pcplist(struct zone *preferred_zone,
 
 	local_irq_save(flags);
 	pcp = &this_cpu_ptr(zone->pageset)->pcp;
-	page = __rmqueue_pcplist(zone,  migratetype, pcp,
+	page = __rmqueue_pcplist(zone, migratetype, alloc_flags, pcp,
 				 gfp_flags);
 	if (page) {
 		__count_zid_vm_events(PGALLOC, page_zonenum(page), 1 << order);
@@ -4020,12 +4020,6 @@ __alloc_pages_direct_compact(gfp_t gfp_mask, unsigned int order,
 
 	psi_memstall_enter(&pflags);
 	noreclaim_flag = memalloc_noreclaim_save();
-
-	*compact_result = try_to_compact_pages(gfp_mask, order, alloc_flags, ac,
-									prio);
-
-	memalloc_noreclaim_restore(noreclaim_flag);
-	psi_memstall_leave(&pflags);
 
 	*compact_result = try_to_compact_pages(gfp_mask, order, alloc_flags, ac,
 								prio, &page);
@@ -8044,7 +8038,7 @@ static void __setup_per_zone_wmarks(void)
 			 * If it's a lowmem zone, reserve a number of pages
 			 * proportionate to the zone's size.
 			 */
-			zone->watermark[WMARK_MIN] = min;
+			zone->_watermark[WMARK_MIN] = min;
 		}
 
 		/*

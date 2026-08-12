@@ -5352,9 +5352,19 @@ static inline void hrtick_update(struct rq *rq)
 static inline unsigned long cpu_util(int cpu);
 static unsigned long capacity_of(int cpu);
 
-static inline bool cpu_overutilized(int cpu)
+bool cpu_overutilized(int cpu)
 {
 	return (capacity_of(cpu) * 1024) < (cpu_util(cpu) * capacity_margin);
+}
+
+static inline bool sd_overutilized(struct sched_domain *sd)
+{
+	return sd->shared ? READ_ONCE(sd->shared->overutilized) : false;
+}
+
+static inline bool group_similar_cpu_capacity(struct sched_group *sg1, struct sched_group *sg2)
+{
+	return sg1->sgc->min_capacity == sg2->sgc->min_capacity;
 }
 
 static inline void update_overutilized_status(struct rq *rq)
@@ -5874,11 +5884,6 @@ static unsigned long target_load(int cpu, int type)
 	return max(rq->cpu_load[type-1], total);
 }
 
-static unsigned long capacity_of(int cpu)
-{
-	return cpu_rq(cpu)->cpu_capacity;
-}
-
 static unsigned long cpu_avg_load_per_task(int cpu)
 {
 	struct rq *rq = cpu_rq(cpu);
@@ -6105,7 +6110,7 @@ stune_util(int cpu, unsigned long other_util,
 		 struct sched_walt_cpu_load *walt_load)
 {
 	unsigned long util = min_t(unsigned long, SCHED_CAPACITY_SCALE,
-				   cpu_util_freq(cpu, walt_load) + other_util);
+				   cpu_util_freq_walt(cpu, walt_load) + other_util);
 	long margin = schedtune_cpu_margin_with(util, cpu, NULL);
 
 	trace_sched_boost_cpu(cpu, util, margin);
@@ -6753,6 +6758,11 @@ static void find_best_target(struct sched_domain *sd, cpumask_t *cpus,
 	int best_idle_cpu = -1;
 	int target_cpu = -1;
 	int backup_cpu = -1;
+	int most_spare_cap_cpu = -1;
+	int isolated_candidate = -1;
+	int prev_cpu = task_cpu(p);
+	unsigned long spare_wake_cap = 0, most_spare_wake_cap = 0;
+	unsigned long new_util_cuml = 0, best_idle_cuml_util = ULONG_MAX;
 	bool prefer_idle;
 	bool boosted;
 	int i;
@@ -7469,15 +7479,11 @@ static int find_energy_efficient_cpu(struct task_struct *p, int prev_cpu, int sy
 	}
 
 #ifdef CONFIG_SCHED_WALT
-	if (p->state == TASK_WAKING)
-		delta = task_util(p);
-#endif
-	if (task_placement_boost_enabled(p) || fbt_env.need_idle || boosted ||
-	    is_rtg || __cpu_overutilized(prev_cpu, delta) ||
-	    !task_fits_max(p, prev_cpu) || cpu_isolated(prev_cpu)) {
+	if (task_placement_boost_enabled(p) || !task_fits_max(p, prev_cpu) || cpu_isolated(prev_cpu)) {
 		best_energy_cpu = cpu;
 		goto unlock;
 	}
+#endif
 
 	if (cpumask_test_cpu(prev_cpu, &p->cpus_allowed))
 		prev_energy = best_energy = compute_energy(p, prev_cpu, pd);
@@ -8598,11 +8604,6 @@ redo:
 
 		continue;
 next:
-#ifdef CONFIG_SCHED_WALT
-		trace_sched_load_balance_skip_tasks(env->src_cpu, env->dst_cpu,
-				env->src_grp_type, p->pid, load, task_util(p),
-				cpumask_bits(&p->cpus_allowed)[0]);
-#endif
 		list_move(&p->se.group_node, tasks);
 	}
 
@@ -12544,7 +12545,7 @@ void check_for_migration(struct rq *rq, struct task_struct *p)
 
 		raw_spin_lock(&migration_lock);
 		rcu_read_lock();
-		new_cpu = find_energy_efficient_cpu(p, prev_cpu, 0, 1);
+		new_cpu = find_energy_efficient_cpu(p, prev_cpu, 0);
 		rcu_read_unlock();
 		if ((new_cpu != -1) && (new_cpu != prev_cpu) &&
 		    (capacity_orig_of(new_cpu) > capacity_orig_of(prev_cpu))) {

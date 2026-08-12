@@ -13,6 +13,7 @@
 #include "walt.h"
 
 #include <trace/events/sched.h>
+#include <trace/events/walt.h>
 
 const char *task_event_names[] = {"PUT_PREV_TASK", "PICK_NEXT_TASK",
 				  "TASK_WAKE", "TASK_MIGRATE", "TASK_UPDATE",

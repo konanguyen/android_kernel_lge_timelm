@@ -582,6 +582,7 @@ struct cpu_cycle_counter_cb {
 DECLARE_PER_CPU_READ_MOSTLY(int, sched_load_boost);
 
 #ifdef CONFIG_SCHED_WALT
+struct related_thread_group;
 extern void sched_exit(struct task_struct *p);
 extern int register_cpu_cycle_counter_cb(struct cpu_cycle_counter_cb *cb);
 extern void sched_set_io_is_busy(int val);
@@ -1475,6 +1476,20 @@ struct task_struct {
 #ifdef CONFIG_SECURITY
 	/* Used by LSM modules for access restriction: */
 	void				*security;
+#endif
+#ifdef CONFIG_SCHED_WALT
+	struct ravg			ravg;
+	u64				cpu_cycles;
+	bool				misfit;
+	u8				low_latency;
+	u8				unfilter;
+	u8				rtg_high_prio;
+	u64				last_wake_ts;
+	u64				last_enqueued_ts;
+	u32				init_load_pct;
+	struct related_thread_group __rcu *grp;
+	struct list_head		grp_list;
+	u64				cpu_time_in_last_window;
 #endif
 	/* task is frozen/stopped (used by the cgroup freezer) */
 	ANDROID_KABI_USE(1, unsigned frozen:1);

@@ -1669,6 +1669,30 @@ TRACE_EVENT(sched_overutilized,
 		__entry->overutilized)
 );
 
+TRACE_EVENT(sched_isolate,
+
+	TP_PROTO(unsigned int cpu, unsigned long isolated_mask, u64 start_time, int type),
+
+	TP_ARGS(cpu, isolated_mask, start_time, type),
+
+	TP_STRUCT__entry(
+		__field(unsigned int, cpu)
+		__field(unsigned long, isolated_mask)
+		__field(u64, start_time)
+		__field(int, type)
+	),
+
+	TP_fast_assign(
+		__entry->cpu           = cpu;
+		__entry->isolated_mask = isolated_mask;
+		__entry->start_time    = start_time;
+		__entry->type          = type;
+	),
+
+	TP_printk("cpu=%u isolated_mask=0x%lx start_time=%llu type=%d",
+		  __entry->cpu, __entry->isolated_mask, __entry->start_time, __entry->type)
+);
+
 #endif /* CONFIG_SMP */
 #endif /* _TRACE_SCHED_H */
 

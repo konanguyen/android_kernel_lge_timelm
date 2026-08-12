@@ -15,6 +15,7 @@
 #include "sched.h"
 #include "walt.h"
 #include <trace/events/sched.h>
+#include <trace/events/walt.h>
 
 static DEFINE_PER_CPU(u64, nr_prod_sum);
 static DEFINE_PER_CPU(u64, last_time);

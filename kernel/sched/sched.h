@@ -2562,6 +2562,29 @@ static inline bool uclamp_is_used(void)
 	return false;
 }
 #endif /* CONFIG_UCLAMP_TASK */
+static inline unsigned long task_util(struct task_struct *p)
+{
+#ifdef CONFIG_SCHED_WALT
+	return p->ravg.demand_scaled;
+#else
+	return READ_ONCE(p->se.avg.util_avg);
+#endif
+}
+
+static inline unsigned long cpu_util(int cpu)
+{
+	return cpu_rq(cpu)->cfs.avg.util_avg;
+}
+
+static inline unsigned long capacity_of(int cpu)
+{
+	return cpu_rq(cpu)->cpu_capacity;
+}
+
+static inline unsigned long cpu_util_cum(int cpu, int flag)
+{
+	return cpu_util(cpu);
+}
 
 unsigned long task_util_est(struct task_struct *p);
 unsigned int uclamp_task(struct task_struct *p);

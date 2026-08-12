@@ -176,10 +176,13 @@ enum {
 	POWER_SUPPLY_MOISTURE_FLOATING_CABLE,
 };
 #endif
+
+enum {
 	POWER_SUPPLY_ALIGN_CHECKING = 0,
 	POWER_SUPPLY_ALIGN_MOVE,
 	POWER_SUPPLY_ALIGN_CENTERED,
 	POWER_SUPPLY_ALIGN_ERROR,
+};
 
 enum power_supply_property {
 	/* Properties of type `int' */

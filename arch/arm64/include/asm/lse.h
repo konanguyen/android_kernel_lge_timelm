@@ -23,9 +23,11 @@
 #else	/* __ASSEMBLER__ */
 
 #ifdef CONFIG_LTO_CLANG
+#undef __LSE_PREAMBLE
 #define __LSE_PREAMBLE	".arch_extension lse\n"
 #else
 __asm__(".arch_extension	lse");
+#undef __LSE_PREAMBLE
 #define __LSE_PREAMBLE
 #endif
 

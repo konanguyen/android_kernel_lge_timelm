@@ -1105,12 +1105,19 @@ static void wake_up_page(struct page *page, int bit)
 	wake_up_page_bit(page, bit);
 }
 
+enum behavior {
+	EXCLUSIVE,
+	SHARED,
+	DROP,
+};
+
 static inline __sched int wait_on_page_bit_common(wait_queue_head_t *q,
-		struct page *page, int bit_nr, int state, bool lock)
+		struct page *page, int bit_nr, int state, enum behavior behavior)
 {
 	struct wait_page_queue wait_page;
 	wait_queue_entry_t *wait = &wait_page.wait;
 	bool thrashing = false;
+	bool bit_is_set;
 	unsigned long pflags;
 	int ret = 0;
 

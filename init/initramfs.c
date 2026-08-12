@@ -642,6 +642,14 @@ static void __init populate_initrd_image(char *err)
 }
 #endif /* CONFIG_BLK_DEV_RAM */
 
+static bool __initdata do_skip_initramfs;
+static int __init skip_initramfs_param(char *str)
+{
+	do_skip_initramfs = true;
+	return 1;
+}
+__setup("skip_initramfs", skip_initramfs_param);
+
 static int __init populate_rootfs(void)
 {
 	char *err;

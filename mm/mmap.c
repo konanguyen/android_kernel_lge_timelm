@@ -1214,11 +1214,11 @@ struct vm_area_struct *__vma_merge(struct mm_struct *mm,
 							/* cases 1, 6 */
 			err = __vma_adjust(prev, prev->vm_start,
 					 next->vm_end, prev->vm_pgoff, NULL,
-					 prev, keep_locked);
+					 prev, false);
 		} else					/* cases 2, 5, 7 */
 			err = __vma_adjust(prev, prev->vm_start,
 					   end, prev->vm_pgoff, NULL, prev,
-					   keep_locked);
+					   false);
 		if (err)
 			return NULL;
 		khugepaged_enter_vma_merge(prev, vm_flags);
@@ -1237,11 +1237,11 @@ struct vm_area_struct *__vma_merge(struct mm_struct *mm,
 		if (prev && addr < prev->vm_end)	/* case 4 */
 			err = __vma_adjust(prev, prev->vm_start,
 					 addr, prev->vm_pgoff, NULL, next,
-					 keep_locked);
+					 false);
 		else {					/* cases 3, 8 */
 			err = __vma_adjust(area, addr, next->vm_end,
 					 next->vm_pgoff - pglen, NULL, next,
-					 keep_locked);
+					 false);
 			/*
 			 * In case 3 area is already equal to next and
 			 * this is a noop, but in case 8 "area" has
