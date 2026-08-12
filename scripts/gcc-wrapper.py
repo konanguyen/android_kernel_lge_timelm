@@ -1,4 +1,4 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only
 # Copyright (c) 2011-2017, 2018 The Linux Foundation. All rights reserved.
 
@@ -6,6 +6,8 @@
 
 # Invoke gcc, looking for warnings, and causing a failure if there are
 # non-whitelisted warnings.
+
+from __future__ import print_function
 
 import errno
 import re
@@ -26,12 +28,20 @@ allowed_warnings = set([
 ofile = None
 
 warning_re = re.compile(r'''(.*/|)([^/]+\.[a-z]+:\d+):(\d+:)? warning:''')
+
+
+def to_text(data):
+    if isinstance(data, bytes):
+        return data.decode('utf-8', 'replace')
+    return data
+
+
 def interpret_warning(line):
     """Decode the message from gcc.  The messages we care about have a filename, and a warning"""
-    line = line.rstrip('\n')
+    line = to_text(line).rstrip('\n')
     m = warning_re.match(line)
     if m and m.group(2) not in allowed_warnings:
-        print "error, forbidden warning:", m.group(2)
+        print("error, forbidden warning:", m.group(2))
 
         # If there is a warning, remove any object if it exists.
         if ofile:
@@ -40,6 +50,7 @@ def interpret_warning(line):
             except OSError:
                 pass
         sys.exit(1)
+
 
 def run_gcc():
     args = sys.argv[1:]
@@ -56,19 +67,21 @@ def run_gcc():
     try:
         proc = subprocess.Popen(args, stderr=subprocess.PIPE)
         for line in proc.stderr:
-            print line,
-            interpret_warning(line)
+            text = to_text(line)
+            sys.stdout.write(text)
+            interpret_warning(text)
 
         result = proc.wait()
     except OSError as e:
         result = e.errno
         if result == errno.ENOENT:
-            print args[0] + ':',e.strerror
-            print 'Is your PATH set correctly?'
+            print(args[0] + ':', e.strerror)
+            print('Is your PATH set correctly?')
         else:
-            print ' '.join(args), str(e)
+            print(' '.join(args), str(e))
 
     return result
+
 
 if __name__ == '__main__':
     status = run_gcc()
