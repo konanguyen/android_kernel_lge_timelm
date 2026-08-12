@@ -575,7 +575,7 @@ static int uvc_parse_format(struct uvc_device *dev,
 	/* Parse the frame descriptors. Only uncompressed, MJPEG and frame
 	 * based formats have frame descriptors.
 	 */
-	while (ftype && buflen > 2 && buffer[1] == USB_DT_CS_INTERFACE &&
+	while (buflen > 2 && buffer[1] == USB_DT_CS_INTERFACE &&
 	       buffer[2] == ftype) {
 		frame = &format->frame[format->nframes];
 		if (ftype != UVC_VS_FRAME_FRAME_BASED)
@@ -860,26 +860,16 @@ static int uvc_parse_streaming(struct uvc_device *dev,
 		goto error;
 	}
 
-	/*
-	 * Allocate memory for the formats, the frames and the intervals,
-	 * plus any required padding to guarantee that everything has the
-	 * correct alignment.
-	 */
-	size = nformats * sizeof(*format);
-	size = ALIGN(size, __alignof__(*frame)) + nframes * sizeof(*frame);
-	size = ALIGN(size, __alignof__(*interval))
+	size = nformats * sizeof(*format) + nframes * sizeof(*frame)
 	     + nintervals * sizeof(*interval);
-
 	format = kzalloc(size, GFP_KERNEL);
-	if (!format) {
+	if (format == NULL) {
 		ret = -ENOMEM;
 		goto error;
 	}
 
-	frame = (void *)format + nformats * sizeof(*format);
-	frame = PTR_ALIGN(frame, __alignof__(*frame));
-	interval = (void *)frame + nframes * sizeof(*frame);
-	interval = PTR_ALIGN(interval, __alignof__(*interval));
+	frame = (struct uvc_frame *)&format[nformats];
+	interval = (u32 *)&frame[nframes];
 
 	streaming->format = format;
 	streaming->nformats = nformats;
@@ -950,10 +940,7 @@ static struct uvc_entity *uvc_alloc_entity(u16 type, u8 id,
 	unsigned int i;
 
 	extra_size = roundup(extra_size, sizeof(*entity->pads));
-	if (num_pads)
-		num_inputs = type & UVC_TERM_OUTPUT ? num_pads : num_pads - 1;
-	else
-		num_inputs = 0;
+	num_inputs = (type & UVC_TERM_OUTPUT) ? num_pads : num_pads - 1;
 	size = sizeof(*entity) + extra_size + sizeof(*entity->pads) * num_pads
 	     + num_inputs;
 	entity = kzalloc(size, GFP_KERNEL);
@@ -969,7 +956,7 @@ static struct uvc_entity *uvc_alloc_entity(u16 type, u8 id,
 
 	for (i = 0; i < num_inputs; ++i)
 		entity->pads[i].flags = MEDIA_PAD_FL_SINK;
-	if (!UVC_ENTITY_IS_OTERM(entity) && num_pads)
+	if (!UVC_ENTITY_IS_OTERM(entity))
 		entity->pads[num_pads-1].flags = MEDIA_PAD_FL_SOURCE;
 
 	entity->bNrInPins = num_inputs;
@@ -1043,8 +1030,10 @@ static int uvc_parse_vendor_control(struct uvc_device *dev,
 					       + n;
 		memcpy(unit->extension.bmControls, &buffer[23+p], 2*n);
 
-		if (buffer[24+p+2*n] == 0 ||
-		    usb_string(udev, buffer[24+p+2*n], unit->name, sizeof(unit->name)) < 0)
+		if (buffer[24+p+2*n] != 0)
+			usb_string(udev, buffer[24+p+2*n], unit->name,
+				   sizeof(unit->name));
+		else
 			sprintf(unit->name, "Extension %u", buffer[3]);
 
 		list_add_tail(&unit->list, &dev->entities);
@@ -1169,15 +1158,15 @@ static int uvc_parse_standard_control(struct uvc_device *dev,
 			memcpy(term->media.bmTransportModes, &buffer[10+n], p);
 		}
 
-		if (buffer[7] == 0 ||
-		    usb_string(udev, buffer[7], term->name, sizeof(term->name)) < 0) {
-			if (UVC_ENTITY_TYPE(term) == UVC_ITT_CAMERA)
-				sprintf(term->name, "Camera %u", buffer[3]);
-			if (UVC_ENTITY_TYPE(term) == UVC_ITT_MEDIA_TRANSPORT_INPUT)
-				sprintf(term->name, "Media %u", buffer[3]);
-			else
-				sprintf(term->name, "Input %u", buffer[3]);
-		}
+		if (buffer[7] != 0)
+			usb_string(udev, buffer[7], term->name,
+				   sizeof(term->name));
+		else if (UVC_ENTITY_TYPE(term) == UVC_ITT_CAMERA)
+			sprintf(term->name, "Camera %u", buffer[3]);
+		else if (UVC_ENTITY_TYPE(term) == UVC_ITT_MEDIA_TRANSPORT_INPUT)
+			sprintf(term->name, "Media %u", buffer[3]);
+		else
+			sprintf(term->name, "Input %u", buffer[3]);
 
 		list_add_tail(&term->list, &dev->entities);
 		break;
@@ -1209,8 +1198,10 @@ static int uvc_parse_standard_control(struct uvc_device *dev,
 
 		memcpy(term->baSourceID, &buffer[7], 1);
 
-		if (buffer[8] == 0 ||
-		    usb_string(udev, buffer[8], term->name, sizeof(term->name)) < 0)
+		if (buffer[8] != 0)
+			usb_string(udev, buffer[8], term->name,
+				   sizeof(term->name));
+		else
 			sprintf(term->name, "Output %u", buffer[3]);
 
 		list_add_tail(&term->list, &dev->entities);
@@ -1232,8 +1223,10 @@ static int uvc_parse_standard_control(struct uvc_device *dev,
 
 		memcpy(unit->baSourceID, &buffer[5], p);
 
-		if (buffer[5+p] == 0 ||
-		    usb_string(udev, buffer[5+p], unit->name, sizeof(unit->name)) < 0)
+		if (buffer[5+p] != 0)
+			usb_string(udev, buffer[5+p], unit->name,
+				   sizeof(unit->name));
+		else
 			sprintf(unit->name, "Selector %u", buffer[3]);
 
 		list_add_tail(&unit->list, &dev->entities);
@@ -1263,8 +1256,10 @@ static int uvc_parse_standard_control(struct uvc_device *dev,
 		if (dev->uvc_version >= 0x0110)
 			unit->processing.bmVideoStandards = buffer[9+n];
 
-		if (buffer[8+n] == 0 ||
-		    usb_string(udev, buffer[8+n], unit->name, sizeof(unit->name)) < 0)
+		if (buffer[8+n] != 0)
+			usb_string(udev, buffer[8+n], unit->name,
+				   sizeof(unit->name));
+		else
 			sprintf(unit->name, "Processing %u", buffer[3]);
 
 		list_add_tail(&unit->list, &dev->entities);
@@ -1292,8 +1287,10 @@ static int uvc_parse_standard_control(struct uvc_device *dev,
 		unit->extension.bmControls = (u8 *)unit + sizeof(*unit);
 		memcpy(unit->extension.bmControls, &buffer[23+p], n);
 
-		if (buffer[23+p+n] == 0 ||
-		    usb_string(udev, buffer[23+p+n], unit->name, sizeof(unit->name)) < 0)
+		if (buffer[23+p+n] != 0)
+			usb_string(udev, buffer[23+p+n], unit->name,
+				   sizeof(unit->name));
+		else
 			sprintf(unit->name, "Extension %u", buffer[3]);
 
 		list_add_tail(&unit->list, &dev->entities);
@@ -2402,8 +2399,6 @@ static const struct uvc_device_info uvc_quirk_force_y8 = {
  * The Logitech cameras listed below have their interface class set to
  * VENDOR_SPEC because they don't announce themselves as UVC devices, even
  * though they are compliant.
- *
- * Sort these by vendor/product ID.
  */
 static const struct usb_device_id uvc_ids[] = {
 	/* LogiLink Wireless Webcam */
@@ -2854,15 +2849,6 @@ static const struct usb_device_id uvc_ids[] = {
 	  .bInterfaceProtocol	= 0,
 	  .driver_info		= UVC_QUIRK_INFO(UVC_QUIRK_PROBE_MINMAX
 					| UVC_QUIRK_IGNORE_SELECTOR_UNIT) },
-	/* NXP Semiconductors IR VIDEO */
-	{ .match_flags		= USB_DEVICE_ID_MATCH_DEVICE
-				| USB_DEVICE_ID_MATCH_INT_INFO,
-	  .idVendor		= 0x1fc9,
-	  .idProduct		= 0x009b,
-	  .bInterfaceClass	= USB_CLASS_VIDEO,
-	  .bInterfaceSubClass	= 1,
-	  .bInterfaceProtocol	= 0,
-	  .driver_info		= (kernel_ulong_t)&uvc_quirk_probe_minmax },
 	/* Oculus VR Positional Tracker DK2 */
 	{ .match_flags		= USB_DEVICE_ID_MATCH_DEVICE
 				| USB_DEVICE_ID_MATCH_INT_INFO,
