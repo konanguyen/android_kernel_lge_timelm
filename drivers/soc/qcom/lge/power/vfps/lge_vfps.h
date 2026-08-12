@@ -16,7 +16,7 @@
 
 #include <linux/err.h>
 #include "main/lge_prm.h"
-#include "sde/sde_crtc.h"
+struct drm_encoder;
 
 bool lge_vfps_check_internal(void);
 void lge_vfps_set_encoder(struct drm_encoder *encoder);
