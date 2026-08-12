@@ -823,7 +823,7 @@ static void do_msm_poweroff(void)
 }
 
 #ifdef CONFIG_LGE_HANDLE_PANIC
-extern int skip_free_rdump;
+int __attribute__((weak)) skip_free_rdump;
 static int __init lge_crash_handler(char *status)
 {
         if (!strcmp(status, "on"))

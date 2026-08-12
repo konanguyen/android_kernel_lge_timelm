@@ -67,16 +67,8 @@ enum {
  * to msm_drm_notifier_list, which would be called when
  * received unblank/power down event.
  */
-int lge_panel_notifier_register_client(struct notifier_block *nb);
-
-/**
- * lge_panel_notofier_unregister_client - unregister a client notifier
- * @nb: notifier block to callback on events
- *
- * This function unregisters the callback function from
- * msm_drm_notifier_list.
- */
-int lge_panel_notifier_unregister_client(struct notifier_block *nb);
+static inline int lge_panel_notifier_register_client(struct notifier_block *nb) { return 0; }
+static inline int lge_panel_notifier_unregister_client(struct notifier_block *nb) { return 0; }
 
 /**
  * lge_panel_notifier_call_chain - notify clients of lge_panel_events

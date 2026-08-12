@@ -476,7 +476,7 @@ static const struct attribute_group *flash_groups[] = {
 	&flash_group,
 	NULL,
 };
-extern struct class* get_camera_class(void);
+struct class* __attribute__((weak)) get_camera_class(void) { return NULL; }
 
 static ssize_t show_flash_fault_status(struct device *dev,
 	struct device_attribute *attr, char *buf)

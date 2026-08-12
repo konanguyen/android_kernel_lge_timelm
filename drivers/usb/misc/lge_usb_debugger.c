@@ -49,8 +49,8 @@ struct lge_usb_debugger {
 
 int debug_accessory_status = 0;
 
-extern int msm_geni_serial_set_uart_console(int enable);
-extern void msm_geni_serial_set_uart_console_status(int status);
+int __attribute__((weak)) msm_geni_serial_set_uart_console(int enable) { return 0; }
+void __attribute__((weak)) msm_geni_serial_set_uart_console_status(int status) {}
 
 static void lge_usb_debugger_work(struct work_struct *w)
 {
