@@ -21,7 +21,7 @@ lge_touch_firmware := $(subst $(srctree)/firmware/,,$(lge_touch_image_files))
 fw-shipped-$(CONFIG_LGE_TOUCH_CORE_BASE) += $(lge_touch_firmware)
 endif
 
-fw-shipped-$(CONFIG_SAR_ALMF04_C2_C3_12QFN) += almf04/ALMF04_Sar2CNew_V2.04T.fw
+# fw-shipped-$(CONFIG_SAR_ALMF04_C2_C3_12QFN) += almf04/ALMF04_Sar2CNew_V2.04T.fw
 
 fw-shipped-all := $(fw-shipped-y) $(fw-shipped-m) $(fw-shipped-)
 
