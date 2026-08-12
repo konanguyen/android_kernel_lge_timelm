@@ -1105,38 +1105,19 @@ static void wake_up_page(struct page *page, int bit)
 	wake_up_page_bit(page, bit);
 }
 
-/*
- * A choice of three behaviors for wait_on_page_bit_common():
- */
-enum behavior {
-	EXCLUSIVE,	/* Hold ref to page and take the bit when woken, like
-			 * __lock_page() waiting on then setting PG_locked.
-			 */
-	SHARED,		/* Hold ref to page and check the bit when woken, like
-			 * wait_on_page_writeback() waiting on PG_writeback.
-			 */
-	DROP,		/* Drop ref to page before wait, no check when woken,
-			 * like put_and_wait_on_page_locked() on PG_locked.
-			 */
-};
-
 static inline __sched int wait_on_page_bit_common(wait_queue_head_t *q,
-	struct page *page, int bit_nr, int state, enum behavior behavior)
+		struct page *page, int bit_nr, int state, bool lock)
 {
 	struct wait_page_queue wait_page;
 	wait_queue_entry_t *wait = &wait_page.wait;
-	bool bit_is_set;
 	bool thrashing = false;
-	bool delayacct = false;
 	unsigned long pflags;
 	int ret = 0;
 
 	if (bit_nr == PG_locked &&
 	    !PageUptodate(page) && PageWorkingset(page)) {
-		if (!PageSwapBacked(page)) {
+		if (!PageSwapBacked(page))
 			delayacct_thrashing_start();
-			delayacct = true;
-		}
 		psi_memstall_enter(&pflags);
 		thrashing = true;
 	}
@@ -1194,7 +1175,7 @@ static inline __sched int wait_on_page_bit_common(wait_queue_head_t *q,
 	finish_wait(q, wait);
 
 	if (thrashing) {
-		if (delayacct)
+		if (!PageSwapBacked(page))
 			delayacct_thrashing_end();
 		psi_memstall_leave(&pflags);
 	}
@@ -2562,12 +2543,12 @@ static struct file *do_sync_mmap_readahead(struct vm_fault *vmf)
 	pgoff_t offset = vmf->pgoff;
 
 	/* If we don't want any read-ahead, don't bother */
-	if (vmf->vma_flags & VM_RAND_READ)
+	if (vmf->vma->vm_flags & VM_RAND_READ)
 		return fpin;
 	if (!ra->ra_pages)
 		return fpin;
 
-	if (vmf->vma_flags & VM_SEQ_READ) {
+	if (vmf->vma->vm_flags & VM_SEQ_READ) {
 		fpin = maybe_unlock_mmap_for_io(vmf, fpin);
 		page_cache_sync_readahead(mapping, ra, file, offset,
 					  ra->ra_pages);
@@ -2611,7 +2592,7 @@ static struct file *do_async_mmap_readahead(struct vm_fault *vmf,
 	pgoff_t offset = vmf->pgoff;
 
 	/* If we don't want any read-ahead, don't bother */
-	if (vmf->vma_flags & VM_RAND_READ)
+	if (vmf->vma->vm_flags & VM_RAND_READ || !ra->ra_pages)
 		return fpin;
 	if (ra->mmap_miss > 0)
 		ra->mmap_miss--;
@@ -3301,7 +3282,7 @@ ssize_t generic_perform_write(struct file *file,
 		unsigned long offset;	/* Offset into pagecache page */
 		unsigned long bytes;	/* Bytes to write to page */
 		size_t copied;		/* Bytes copied from user */
-		void *fsdata;
+		void *fsdata = NULL;
 
 		offset = (pos & (PAGE_SIZE - 1));
 		bytes = min_t(unsigned long, PAGE_SIZE - offset,

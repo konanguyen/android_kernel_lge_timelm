@@ -3454,16 +3454,10 @@ static void sd_probe_async(void *data, async_cookie_t cookie)
 	}
 
 	blk_pm_runtime_init(sdp->request_queue, dev);
-	if (sdp->autosuspend_delay >= 0)
-		pm_runtime_set_autosuspend_delay(dev, sdp->autosuspend_delay);
-
-#ifdef CONFIG_LFS_SCSI_USB_HOST_NOTIFY
-	if (sdp->host->by_usb) {
-		gd->interfaces = GENHD_IF_USB;
-		msleep(500);
+	if (sdp->rpm_autosuspend) {
+		pm_runtime_set_autosuspend_delay(dev,
+			sdp->host->hostt->rpm_autosuspend_delay);
 	}
-#endif
-
 	device_add_disk(dev, gd);
 
 #ifdef CONFIG_LFS_SCSI_USB_HOST_NOTIFY
@@ -3581,15 +3575,16 @@ static int sd_probe(struct device *dev)
 #endif
 
 	device_initialize(&sdkp->dev);
-	sdkp->dev.parent = dev;
+	sdkp->dev.parent = get_device(dev);
 	sdkp->dev.class = &sd_disk_class;
 	dev_set_name(&sdkp->dev, "%s", dev_name(dev));
 
 	error = device_add(&sdkp->dev);
-	if (error)
-		goto out_free_index;
+	if (error) {
+		put_device(&sdkp->dev);
+		goto out;
+	}
 
-	get_device(dev);
 	dev_set_drvdata(dev, sdkp);
 
 #ifdef CONFIG_LFS_SCSI_USB_HOST_NOTIFY

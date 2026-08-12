@@ -109,6 +109,8 @@
 
 #define TMC_AUTH_NSID_MASK	GENMASK(1, 0)
 
+#define TMC_AUTH_NSID_MASK	GENMASK(1, 0)
+
 enum tmc_config_type {
 	TMC_CONFIG_TYPE_ETB,
 	TMC_CONFIG_TYPE_ETR,
@@ -253,6 +255,8 @@ struct tmc_drvdata {
 	struct mutex		mem_lock;
 	u32			trigger_cntr;
 	u32			etr_caps;
+	struct idr		idr;
+	struct mutex		idr_mutex;
 	struct etr_buf		*sysfs_buf;
 	struct coresight_csr	*csr;
 	const char		*csr_name;
@@ -394,7 +398,7 @@ ssize_t tmc_sg_table_get_data(struct tmc_sg_table *sg_table,
 static inline unsigned long
 tmc_sg_table_buf_size(struct tmc_sg_table *sg_table)
 {
-	return sg_table->data_pages.nr_pages << PAGE_SHIFT;
+	return (unsigned long)sg_table->data_pages.nr_pages << PAGE_SHIFT;
 }
 
 struct coresight_device *tmc_etr_get_catu_device(struct tmc_drvdata *drvdata);

@@ -2644,9 +2644,9 @@ static inline bool sanity_check_area_boundary(struct f2fs_sb_info *sbi,
 	u32 segment_count = le32_to_cpu(raw_super->segment_count);
 	u32 log_blocks_per_seg = le32_to_cpu(raw_super->log_blocks_per_seg);
 	u64 main_end_blkaddr = main_blkaddr +
-				(segment_count_main << log_blocks_per_seg);
+				((u64)segment_count_main << log_blocks_per_seg);
 	u64 seg_end_blkaddr = segment0_blkaddr +
-				(segment_count << log_blocks_per_seg);
+				((u64)segment_count << log_blocks_per_seg);
 
 	if (segment0_blkaddr != cp_blkaddr) {
 		f2fs_info(sbi, "Mismatch start address, segment0(%u) cp_blkaddr(%u)",
@@ -2756,6 +2756,22 @@ static int sanity_check_raw_super(struct f2fs_sb_info *sbi,
 		f2fs_info(sbi, "Magic Mismatch, valid(0x%x) - read(0x%x)",
 			  F2FS_SUPER_MAGIC, le32_to_cpu(raw_super->magic));
 		return -EINVAL;
+	}
+
+	/* Check checksum_offset and crc in superblock */
+	if (__F2FS_HAS_FEATURE(raw_super, F2FS_FEATURE_SB_CHKSUM)) {
+		crc_offset = le32_to_cpu(raw_super->checksum_offset);
+		if (crc_offset !=
+			offsetof(struct f2fs_super_block, crc)) {
+			f2fs_info(sbi, "Invalid SB checksum offset: %zu",
+				  crc_offset);
+			return -EFSCORRUPTED;
+		}
+		crc = le32_to_cpu(raw_super->crc);
+		if (!f2fs_crc_valid(sbi, crc, raw_super, crc_offset)) {
+			f2fs_info(sbi, "Invalid SB checksum value: %u", crc);
+			return -EFSCORRUPTED;
+		}
 	}
 
 	/* Currently, support only 4KB page cache size */
@@ -3874,6 +3890,7 @@ free_bio_info:
 
 #ifdef CONFIG_UNICODE
 	utf8_unload(sb->s_encoding);
+	sb->s_encoding = NULL;
 #endif
 free_options:
 #ifdef CONFIG_QUOTA
@@ -4057,4 +4074,5 @@ module_exit(exit_f2fs_fs)
 MODULE_AUTHOR("Samsung Electronics's Praesto Team");
 MODULE_DESCRIPTION("Flash Friendly File System");
 MODULE_LICENSE("GPL");
+MODULE_SOFTDEP("pre: crc32");
 

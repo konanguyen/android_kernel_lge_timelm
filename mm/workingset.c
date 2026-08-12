@@ -317,7 +317,7 @@ void workingset_refault(struct page *page, void *shadow)
 	 * don't act on pages that couldn't stay resident even if all
 	 * the memory was available to the page cache.
 	 */
-	if (refault_distance > active_file + anon)
+	if (refault_distance > active_file)
 		goto out;
 
 	SetPageActive(page);

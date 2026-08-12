@@ -282,7 +282,7 @@ static void die_kernel_fault(const char *msg, unsigned long addr,
 	show_pte(addr);
 	die("Oops", regs, esr);
 	bust_spinlocks(0);
-	do_exit(SIGKILL);
+	make_task_dead(SIGKILL);
 }
 
 static void __do_kernel_fault(unsigned long addr, unsigned int esr,
@@ -390,8 +390,8 @@ static void do_bad_area(unsigned long addr, unsigned int esr, struct pt_regs *re
 	}
 }
 
-#define VM_FAULT_BADMAP		0x010000
-#define VM_FAULT_BADACCESS	0x020000
+#define VM_FAULT_BADMAP		((__force vm_fault_t)0x010000)
+#define VM_FAULT_BADACCESS	((__force vm_fault_t)0x020000)
 
 static int __do_page_fault(struct vm_area_struct *vma, unsigned long addr,
 			   unsigned int mm_flags, unsigned long vm_flags,
@@ -633,21 +633,24 @@ no_context:
 	return 0;
 }
 
-static int do_tlb_conf_fault(unsigned long addr,
-				unsigned int esr,
-				struct pt_regs *regs)
+int __weak do_tlb_conf_fault(unsigned long addr,
+			     unsigned int esr,
+			     struct pt_regs *regs)
 {
-#define SCM_TLB_CONFLICT_CMD	0x1F
-	struct scm_desc desc = {
-		.args[0] = addr,
-		.arginfo = SCM_ARGS(1),
-	};
+	return 1; /* do_bad default */
+}
 
-	if (scm_call2_atomic(SCM_SIP_FNID(SCM_SVC_MP, SCM_TLB_CONFLICT_CMD),
-						&desc))
-		return 1;
+int (*do_tlb_conf_fault_cb)(unsigned long addr,
+			    unsigned int esr,
+			    struct pt_regs *regs)
+	= do_tlb_conf_fault; /* initialization saves us a branch */
+EXPORT_SYMBOL_GPL(do_tlb_conf_fault_cb);
 
-	return 0;
+static int _do_tlb_conf_fault(unsigned long addr,
+			      unsigned int esr,
+			      struct pt_regs *regs)
+{
+	return (*do_tlb_conf_fault_cb)(addr, esr, regs);
 }
 
 static int __kprobes do_translation_fault(unsigned long addr,
@@ -757,7 +760,7 @@ static const struct fault_info fault_info[] = {
 	{ do_bad,		SIGKILL, SI_KERNEL,	"unknown 45"			},
 	{ do_bad,		SIGKILL, SI_KERNEL,	"unknown 46"			},
 	{ do_bad,		SIGKILL, SI_KERNEL,	"unknown 47"			},
-	{ do_tlb_conf_fault,	SIGKILL, SI_KERNEL,	"TLB conflict abort"		},
+	{ _do_tlb_conf_fault,	SIGKILL, SI_KERNEL,	"TLB conflict abort"		},
 	{ do_bad,		SIGKILL, SI_KERNEL,	"Unsupported atomic hardware update fault"	},
 	{ do_bad,		SIGKILL, SI_KERNEL,	"unknown 50"			},
 	{ do_bad,		SIGKILL, SI_KERNEL,	"unknown 51"			},

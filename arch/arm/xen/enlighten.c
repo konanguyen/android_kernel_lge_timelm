@@ -62,46 +62,12 @@ static __read_mostly unsigned int xen_events_irq;
 uint32_t xen_start_flags;
 EXPORT_SYMBOL(xen_start_flags);
 
-int xen_remap_domain_gfn_array(struct vm_area_struct *vma,
-			       unsigned long addr,
-			       xen_pfn_t *gfn, int nr,
-			       int *err_ptr, pgprot_t prot,
-			       unsigned domid,
-			       struct page **pages)
-{
-	return xen_xlate_remap_gfn_array(vma, addr, gfn, nr, err_ptr,
-					 prot, domid, pages);
-}
-EXPORT_SYMBOL_GPL(xen_remap_domain_gfn_array);
-
-/* Not used by XENFEAT_auto_translated guests. */
-int xen_remap_domain_gfn_range(struct vm_area_struct *vma,
-                              unsigned long addr,
-                              xen_pfn_t gfn, int nr,
-                              pgprot_t prot, unsigned domid,
-                              struct page **pages)
-{
-	return -ENOSYS;
-}
-EXPORT_SYMBOL_GPL(xen_remap_domain_gfn_range);
-
 int xen_unmap_domain_gfn_range(struct vm_area_struct *vma,
 			       int nr, struct page **pages)
 {
 	return xen_xlate_unmap_gfn_range(vma, nr, pages);
 }
 EXPORT_SYMBOL_GPL(xen_unmap_domain_gfn_range);
-
-/* Not used by XENFEAT_auto_translated guests. */
-int xen_remap_domain_mfn_array(struct vm_area_struct *vma,
-			       unsigned long addr,
-			       xen_pfn_t *mfn, int nr,
-			       int *err_ptr, pgprot_t prot,
-			       unsigned int domid, struct page **pages)
-{
-	return -ENOSYS;
-}
-EXPORT_SYMBOL_GPL(xen_remap_domain_mfn_array);
 
 static void xen_read_wallclock(struct timespec64 *ts)
 {
@@ -388,7 +354,8 @@ static int __init xen_guest_init(void)
 	 * for secondary CPUs as they are brought up.
 	 * For uniformity we use VCPUOP_register_vcpu_info even on cpu0.
 	 */
-	xen_vcpu_info = alloc_percpu(struct vcpu_info);
+	xen_vcpu_info = __alloc_percpu(sizeof(struct vcpu_info),
+				       1 << fls(sizeof(struct vcpu_info) - 1));
 	if (xen_vcpu_info == NULL)
 		return -ENOMEM;
 
@@ -404,8 +371,6 @@ static int __init xen_guest_init(void)
 		return -ENOMEM;
 	}
 	gnttab_init();
-	if (!xen_initial_domain())
-		xenbus_probe(NULL);
 
 	/*
 	 * Making sure board specific code will not set up ops for

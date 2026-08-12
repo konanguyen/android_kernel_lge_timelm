@@ -388,8 +388,8 @@ struct thermal_zone_of_device_ops {
 	int (*get_trend)(void *, int, enum thermal_trend *);
 	int (*set_trips)(void *, int, int);
 	int (*set_emul_temp)(void *, int);
-	int (*set_trip_temp)(void *data, int trip, int temp);
-	int (*get_trip_temp)(void *data, int trip, int *temp);
+	int (*set_trip_temp)(void *, int, int);
+	int (*get_trip_temp)(void *, int, int *);
 };
 
 /**
@@ -412,6 +412,7 @@ enum aggregation_logic {
 	VIRT_WEIGHTED_AVG,
 	VIRT_MAXIMUM,
 	VIRT_MINIMUM,
+	VIRT_COUNT_THRESHOLD,
 	VIRT_AGGREGATION_NR,
 };
 
@@ -581,12 +582,13 @@ static inline void thermal_zone_device_update_temp(
 static inline void thermal_zone_set_trips(struct thermal_zone_device *tz)
 { }
 static inline struct thermal_cooling_device *
-thermal_cooling_device_register(char *type, void *devdata,
+thermal_cooling_device_register(const char *type, void *devdata,
 	const struct thermal_cooling_device_ops *ops)
 { return ERR_PTR(-ENODEV); }
 static inline struct thermal_cooling_device *
 thermal_of_cooling_device_register(struct device_node *np,
-	char *type, void *devdata, const struct thermal_cooling_device_ops *ops)
+	const char *type, void *devdata,
+	const struct thermal_cooling_device_ops *ops)
 { return ERR_PTR(-ENODEV); }
 static inline void thermal_cooling_device_unregister(
 	struct thermal_cooling_device *cdev)

@@ -181,10 +181,8 @@ struct coresight_connection {
  * @orphan:	true if the component has connections that haven't been linked.
  * @enable:	'true' if component is currently part of an active path.
  * @activated:	'true' only if a _sink_ has been activated.  A sink can be
-		activated but not yet enabled.  Enabling for a _sink_
-		happens when a source has been selected for that it.
- * @abort:     captures sink trace on abort.
- * @reg_clk:	as defined by @coresight_reg_clk.
+ *		activated but not yet enabled.  Enabling for a _sink_
+ *		appens when a source has been selected for that it.
  * @ea:		Device attribute for sink representation under PMU directory.
  */
 struct coresight_device {

@@ -5666,16 +5666,17 @@ static int sdhci_msm_probe(struct platform_device *pdev)
 		  SDHCI_VENDOR_VER_SHIFT));
 	if (((host_version & SDHCI_VENDOR_VER_MASK) >>
 		SDHCI_VENDOR_VER_SHIFT) == SDHCI_VER_100) {
-		/*
 		 * Add 40us delay in interrupt handler when
 		 * operating at initialization frequency(400KHz).
-		 */
 		host->quirks2 |= SDHCI_QUIRK2_SLOW_INT_CLR;
-		/*
 		 * Set Software Reset for DAT line in Software
 		 * Reset Register (Bit 2).
-		 */
 		host->quirks2 |= SDHCI_QUIRK2_RDWR_TX_ACTIVE_EOT;
+	/* Setup IRQ for handling power/voltage tasks with PMIC */
+	msm_host->pwr_irq = platform_get_irq_byname(pdev, "pwr_irq");
+	if (msm_host->pwr_irq < 0) {
+		ret = msm_host->pwr_irq;
+		goto clk_disable;
 	}
 
 	host->quirks2 |= SDHCI_QUIRK2_IGN_DATA_END_BIT_ERROR;

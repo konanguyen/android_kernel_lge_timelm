@@ -156,9 +156,7 @@ static void ion_secure_cma_free(struct ion_buffer *buffer)
 	ion_cma_free(buffer);
 }
 
-static int ion_secure_cma_allocate(struct ion_heap *heap,
-				   struct ion_buffer *buffer, unsigned long len,
-				   unsigned long flags)
+int ion_add_cma_heaps(void)
 {
 	int ret;
 
@@ -242,3 +240,7 @@ struct ion_heap *ion_cma_secure_heap_create(struct ion_platform_heap *data)
 	cma_heap->heap.type = (enum ion_heap_type)ION_HEAP_TYPE_HYP_CMA;
 	return &cma_heap->heap;
 }
+
+#ifndef CONFIG_ION_MODULE
+device_initcall(ion_add_cma_heaps);
+#endif

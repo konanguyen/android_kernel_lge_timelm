@@ -29,20 +29,7 @@ bool fscrypt_policies_equal(const union fscrypt_policy *policy1,
 	if (policy1->version != policy2->version)
 		return false;
 
-	if (fscrypt_policy_contents_mode(policy1) == FSCRYPT_MODE_PRIVATE)
-		return(!memcmp(policy1->v1.master_key_descriptor,
-		       policy2->v1.master_key_descriptor,
-		       FSCRYPT_KEY_DESCRIPTOR_SIZE)) &&
-		      (fscrypt_policy_contents_mode(policy1) ==
-		       fscrypt_policy_contents_mode(policy2)) &&
-		      (fscrypt_policy_fnames_mode(policy1) ==
-		       fscrypt_policy_fnames_mode(policy2)) &&
-		      ((fscrypt_policy_flags(policy1) &
-			~FSCRYPT_POLICY_FLAG_IV_INO_LBLK_32) ==
-		       (fscrypt_policy_flags(policy2) &
-			~FSCRYPT_POLICY_FLAG_IV_INO_LBLK_32));
-	else
-		return !memcmp(policy1, policy2, fscrypt_policy_size(policy1));
+	return !memcmp(policy1, policy2, fscrypt_policy_size(policy1));
 }
 
 static bool fscrypt_valid_enc_modes(u32 contents_mode, u32 filenames_mode)
@@ -95,6 +82,20 @@ static bool supported_iv_ino_lblk_policy(const struct fscrypt_policy_v2 *policy,
 	int ino_bits = 64, lblk_bits = 64;
 
 	/*
+	 * IV_INO_LBLK_* exist only because of hardware limitations, and
+	 * currently the only known use case for them involves AES-256-XTS.
+	 * That's also all we test currently.  For these reasons, for now only
+	 * allow AES-256-XTS here.  This can be relaxed later if a use case for
+	 * IV_INO_LBLK_* with other encryption modes arises.
+	 */
+	if (policy->contents_encryption_mode != FSCRYPT_MODE_AES_256_XTS) {
+		fscrypt_warn(inode,
+			     "Can't use %s policy with contents mode other than AES-256-XTS",
+			     type);
+		return false;
+	}
+
+	/*
 	 * It's unsafe to include inode numbers in the IVs if the filesystem can
 	 * potentially renumber inodes, e.g. via filesystem shrinking.
 	 */
@@ -135,8 +136,7 @@ static bool fscrypt_supported_v1_policy(const struct fscrypt_policy_v1 *policy,
 	}
 
 	if (policy->flags & ~(FSCRYPT_POLICY_FLAGS_PAD_MASK |
-			      FSCRYPT_POLICY_FLAG_DIRECT_KEY |
-			      FSCRYPT_POLICY_FLAG_IV_INO_LBLK_32)) {
+			      FSCRYPT_POLICY_FLAG_DIRECT_KEY)) {
 		fscrypt_warn(inode, "Unsupported encryption flags (0x%02x)",
 			     policy->flags);
 		return false;
@@ -196,10 +196,15 @@ static bool fscrypt_supported_v2_policy(const struct fscrypt_policy_v2 *policy,
 					  32, 32))
 		return false;
 
+	/*
+	 * IV_INO_LBLK_32 hashes the inode number, so in principle it can
+	 * support any ino_bits.  However, currently the inode number is gotten
+	 * from inode::i_ino which is 'unsigned long'.  So for now the
+	 * implementation limit is 32 bits.
+	 */
 	if ((policy->flags & FSCRYPT_POLICY_FLAG_IV_INO_LBLK_32) &&
-	    /* This uses hashed inode numbers, so ino_bits doesn't matter. */
 	    !supported_iv_ino_lblk_policy(policy, inode, "IV_INO_LBLK_32",
-					  INT_MAX, 32))
+					  32, 32))
 		return false;
 
 	if (memchr_inv(policy->__reserved, 0, sizeof(policy->__reserved))) {

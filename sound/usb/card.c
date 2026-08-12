@@ -152,19 +152,20 @@ struct snd_usb_substream *find_snd_usb_substream(unsigned int card_num,
 	}
 
 	if (!chip || atomic_read(&chip->shutdown)) {
-		pr_debug("%s: instance of usb crad # %d does not exist\n",
+		pr_debug("%s: instance of usb card # %d does not exist\n",
 			__func__, card_num);
 		goto err;
 	}
 
 	if (pcm_idx >= chip->pcm_devs) {
-		pr_err("%s: invalid pcm dev number %u > %d\n", __func__,
-			pcm_idx, chip->pcm_devs);
+		usb_audio_err(chip, "%s: invalid pcm dev number %u > %d\n",
+			      __func__, pcm_idx, chip->pcm_devs);
 		goto err;
 	}
 
 	if (direction > SNDRV_PCM_STREAM_CAPTURE) {
-		pr_err("%s: invalid direction %u\n", __func__, direction);
+		usb_audio_err(chip, "%s: invalid direction %u\n", __func__,
+			      direction);
 		goto err;
 	}
 
@@ -172,9 +173,9 @@ struct snd_usb_substream *find_snd_usb_substream(unsigned int card_num,
 		if (as->pcm_index == pcm_idx) {
 			subs = &as->substream[direction];
 			if (subs->interface < 0 && !subs->data_endpoint &&
-				!subs->sync_endpoint) {
-				pr_debug("%s: stream disconnected, bail out\n",
-					__func__);
+			    !subs->sync_endpoint) {
+				usb_audio_err(chip, "%s: stream disconnected, bail out\n",
+					      __func__);
 				subs = NULL;
 				goto err;
 			}
@@ -188,7 +189,7 @@ done:
 err:
 	*uchip = chip;
 	if (!subs)
-		pr_debug("%s: substream instance not found\n", __func__);
+		pr_err("%s: substream instance not found\n", __func__);
 	mutex_unlock(&register_mutex);
 	return subs;
 }
@@ -264,9 +265,8 @@ static int snd_usb_create_stream(struct snd_usb_audio *chip, int ctrlif, int int
 				ctrlif, interface);
 			return -EINVAL;
 		}
-		usb_driver_claim_interface(&usb_audio_driver, iface, (void *)-1L);
-
-		return 0;
+		return usb_driver_claim_interface(&usb_audio_driver, iface,
+						  USB_AUDIO_IFACE_UNUSED);
 	}
 
 	if ((altsd->bInterfaceClass != USB_CLASS_AUDIO &&
@@ -286,7 +286,8 @@ static int snd_usb_create_stream(struct snd_usb_audio *chip, int ctrlif, int int
 
 	if (! snd_usb_parse_audio_interface(chip, interface)) {
 		usb_set_interface(dev, interface, 0); /* reset the current interface */
-		usb_driver_claim_interface(&usb_audio_driver, iface, (void *)-1L);
+		return usb_driver_claim_interface(&usb_audio_driver, iface,
+						  USB_AUDIO_IFACE_UNUSED);
 	}
 
 	return 0;
@@ -798,7 +799,7 @@ static void usb_audio_disconnect(struct usb_interface *intf)
 	struct snd_card *card;
 	struct list_head *p;
 
-	if (chip == (void *)-1L)
+	if (chip == USB_AUDIO_IFACE_UNUSED)
 		return;
 
 	card = chip->card;
@@ -900,7 +901,7 @@ static int usb_audio_suspend(struct usb_interface *intf, pm_message_t message)
 	struct usb_mixer_interface *mixer;
 	struct list_head *p;
 
-	if (chip == (void *)-1L)
+	if (chip == USB_AUDIO_IFACE_UNUSED)
 		return 0;
 
 	if (!chip->num_suspended_intf++) {
@@ -932,7 +933,7 @@ static int __usb_audio_resume(struct usb_interface *intf, bool reset_resume)
 	struct list_head *p;
 	int err = 0;
 
-	if (chip == (void *)-1L)
+	if (chip == USB_AUDIO_IFACE_UNUSED)
 		return 0;
 
 	atomic_inc(&chip->active); /* avoid autopm */

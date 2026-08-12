@@ -40,6 +40,7 @@
 #include <linux/interrupt.h>
 #include <linux/io.h>
 #include <linux/io-64-nonatomic-hi-lo.h>
+#include <linux/io-pgtable.h>
 #include <linux/iommu.h>
 #include <linux/io-pgtable.h>
 #include <linux/iopoll.h>

@@ -737,7 +737,7 @@ void smp_send_reschedule(int cpu)
 {
 	if (__smp_update_ipi_history_cb)
 		__smp_update_ipi_history_cb(cpu);
-	smp_cross_call_common(cpumask_of(cpu), IPI_RESCHEDULE);
+	smp_cross_call(cpumask_of(cpu), IPI_RESCHEDULE);
 }
 
 void smp_send_stop(void)

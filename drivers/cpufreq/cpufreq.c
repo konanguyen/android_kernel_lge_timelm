@@ -1906,10 +1906,8 @@ unsigned int cpufreq_driver_fast_switch(struct cpufreq_policy *policy,
 	target_freq = clamp_val(target_freq, policy->min, policy->max);
 
 	ret = cpufreq_driver->fast_switch(policy, target_freq);
-	if (ret) {
+	if (ret)
 		cpufreq_times_record_transition(policy, ret);
-		cpufreq_stats_record_transition(policy, ret);
-	}
 
 	return ret;
 }
@@ -2322,6 +2320,7 @@ static int cpufreq_set_policy(struct cpufreq_policy *policy,
 		ret = cpufreq_start_governor(policy);
 		if (!ret) {
 			pr_debug("cpufreq: governor change\n");
+			sched_cpufreq_governor_change(policy, old_gov);
 			return 0;
 		}
 		cpufreq_exit_governor(policy);

@@ -1382,7 +1382,9 @@ static void intr_callback(struct urb *urb)
 			   "Stop submitting intr, status %d\n", status);
 		return;
 	case -EOVERFLOW:
-		netif_info(tp, intr, tp->netdev, "intr status -EOVERFLOW\n");
+		if (net_ratelimit())
+			netif_info(tp, intr, tp->netdev,
+				   "intr status -EOVERFLOW\n");
 		goto resubmit;
 	/* -EPIPE:  should clear the halt */
 	default:
@@ -3374,7 +3376,6 @@ static void rtl8153_runtime_enable(struct r8152 *tp, bool enable)
 			r8153_queue_wake(tp, true);
 		r8153_u1u2en(tp, false);
 		r8153_u2p3en(tp, false);
-		r8153_mac_clk_spd(tp, true);
 		rtl_runtime_suspend_enable(tp, true);
 	} else {
 		if (tp->version == RTL_VER_06)
@@ -4447,10 +4448,12 @@ static void r8152b_hw_phy_cfg(struct r8152 *tp)
 	r8152b_enable_fc(tp);
 	set_bit(PHY_RESET, &tp->flags);
 }
+
 static void wait_oob_link_list_ready(struct r8152 *tp)
 {
 	u32 ocp_data;
 	int i;
+
 	for (i = 0; i < 1000; i++) {
 		ocp_data = ocp_read_byte(tp, MCU_TYPE_PLA, PLA_OOB_CTRL);
 		if (ocp_data & LINK_LIST_READY)
@@ -4458,21 +4461,11 @@ static void wait_oob_link_list_ready(struct r8152 *tp)
 		usleep_range(1000, 2000);
 	}
 }
-static void r8156b_wait_loading_flash(struct r8152 *tp)
-{
-	if ((ocp_read_word(tp, MCU_TYPE_PLA, 0xd3ae) & BIT(1)) &&
-	    !(ocp_read_word(tp, MCU_TYPE_USB, 0xd284) & BIT(5))) {
-		int i;
-		for(i = 0; i < 100; i++) {
-			if (ocp_read_word(tp, MCU_TYPE_USB, 0xd284) & BIT(2))
-				break;
-			usleep_range(1000, 2000);
-		}
-	}
-}
+
 static void r8152b_exit_oob(struct r8152 *tp)
 {
 	u32 ocp_data;
+
 	ocp_data = ocp_read_dword(tp, MCU_TYPE_PLA, PLA_RCR);
 	ocp_data &= ~RCR_ACPT_ALL;
 	ocp_write_dword(tp, MCU_TYPE_PLA, PLA_RCR, ocp_data);
@@ -4486,11 +4479,15 @@ static void r8152b_exit_oob(struct r8152 *tp)
 	ocp_data = ocp_read_word(tp, MCU_TYPE_PLA, PLA_SFF_STS_7);
 	ocp_data &= ~MCU_BORW_EN;
 	ocp_write_word(tp, MCU_TYPE_PLA, PLA_SFF_STS_7, ocp_data);
+
 	wait_oob_link_list_ready(tp);
+
 	ocp_data = ocp_read_word(tp, MCU_TYPE_PLA, PLA_SFF_STS_7);
 	ocp_data |= RE_INIT_LL;
 	ocp_write_word(tp, MCU_TYPE_PLA, PLA_SFF_STS_7, ocp_data);
+
 	wait_oob_link_list_ready(tp);
+
 	rtl8152_nic_reset(tp);
 	/* rx share fifo credit full threshold */
 	ocp_write_dword(tp, MCU_TYPE_PLA, PLA_RXFIFO_CTRL0, RXFIFO_THR1_NORMAL);
@@ -4523,6 +4520,7 @@ static void r8152b_exit_oob(struct r8152 *tp)
 static void r8152b_enter_oob(struct r8152 *tp)
 {
 	u32 ocp_data;
+
 	ocp_data = ocp_read_byte(tp, MCU_TYPE_PLA, PLA_OOB_CTRL);
 	ocp_data &= ~NOW_IS_OOB;
 	ocp_write_byte(tp, MCU_TYPE_PLA, PLA_OOB_CTRL, ocp_data);
@@ -4530,11 +4528,15 @@ static void r8152b_enter_oob(struct r8152 *tp)
 	ocp_write_dword(tp, MCU_TYPE_PLA, PLA_RXFIFO_CTRL1, RXFIFO_THR2_OOB);
 	ocp_write_dword(tp, MCU_TYPE_PLA, PLA_RXFIFO_CTRL2, RXFIFO_THR3_OOB);
 	rtl_disable(tp);
+
 	wait_oob_link_list_ready(tp);
+
 	ocp_data = ocp_read_word(tp, MCU_TYPE_PLA, PLA_SFF_STS_7);
 	ocp_data |= RE_INIT_LL;
 	ocp_write_word(tp, MCU_TYPE_PLA, PLA_SFF_STS_7, ocp_data);
+
 	wait_oob_link_list_ready(tp);
+
 	ocp_write_word(tp, MCU_TYPE_PLA, PLA_RMS, RTL8152_RMS);
 	rtl_rx_vlan_en(tp, true);
 	ocp_data = ocp_read_word(tp, MCU_TYPE_PLA, PLA_BDC_CR);
@@ -7603,6 +7605,7 @@ static void r8153c_hw_phy_cfg(struct r8152 *tp)
 static void r8153_first_init(struct r8152 *tp)
 {
 	u32 ocp_data;
+
 	rxdy_gated_en(tp, true);
 	r8153_teredo_off(tp);
 	ocp_data = ocp_read_dword(tp, MCU_TYPE_PLA, PLA_RCR);
@@ -7616,11 +7619,15 @@ static void r8153_first_init(struct r8152 *tp)
 	ocp_data = ocp_read_word(tp, MCU_TYPE_PLA, PLA_SFF_STS_7);
 	ocp_data &= ~MCU_BORW_EN;
 	ocp_write_word(tp, MCU_TYPE_PLA, PLA_SFF_STS_7, ocp_data);
+
 	wait_oob_link_list_ready(tp);
+
 	ocp_data = ocp_read_word(tp, MCU_TYPE_PLA, PLA_SFF_STS_7);
 	ocp_data |= RE_INIT_LL;
 	ocp_write_word(tp, MCU_TYPE_PLA, PLA_SFF_STS_7, ocp_data);
+
 	wait_oob_link_list_ready(tp);
+
 	rtl_rx_vlan_en(tp, tp->netdev->features & NETIF_F_HW_VLAN_CTAG_RX);
 	ocp_data = tp->netdev->mtu + VLAN_ETH_HLEN + ETH_FCS_LEN;
 	ocp_write_word(tp, MCU_TYPE_PLA, PLA_RMS, ocp_data);
@@ -7639,16 +7646,21 @@ static void r8153_first_init(struct r8152 *tp)
 static void r8153_enter_oob(struct r8152 *tp)
 {
 	u32 ocp_data;
+
 	ocp_data = ocp_read_byte(tp, MCU_TYPE_PLA, PLA_OOB_CTRL);
 	ocp_data &= ~NOW_IS_OOB;
 	ocp_write_byte(tp, MCU_TYPE_PLA, PLA_OOB_CTRL, ocp_data);
 	rtl_disable(tp);
 	rtl_reset_bmu(tp);
+
 	wait_oob_link_list_ready(tp);
+
 	ocp_data = ocp_read_word(tp, MCU_TYPE_PLA, PLA_SFF_STS_7);
 	ocp_data |= RE_INIT_LL;
 	ocp_write_word(tp, MCU_TYPE_PLA, PLA_SFF_STS_7, ocp_data);
+
 	wait_oob_link_list_ready(tp);
+
 	ocp_data = tp->netdev->mtu + VLAN_ETH_HLEN + ETH_FCS_LEN;
 	ocp_write_word(tp, MCU_TYPE_PLA, PLA_RMS, ocp_data);
 	switch (tp->version) {
@@ -8452,8 +8464,11 @@ static int rtl8152_close(struct net_device *netdev)
 		res = rtl_s5_wol(tp);
 #endif
 		mutex_unlock(&tp->control);
-		usb_autopm_put_interface(tp->intf);
 	}
+
+	if (!res)
+		usb_autopm_put_interface(tp->intf);
+
 	free_all_mem(tp);
 	return res;
 }
@@ -8597,10 +8612,16 @@ static void r8153_init(struct r8152 *tp)
 	ocp_data |= SEN_VAL_NORMAL | SEL_RXIDLE;
 	ocp_write_word(tp, MCU_TYPE_USB, USB_AFE_CTRL2, ocp_data);
 	ocp_write_word(tp, MCU_TYPE_USB, USB_CONNECT_TIMER, 0x0001);
+
+	/* MAC clock speed down */
+	ocp_write_word(tp, MCU_TYPE_PLA, PLA_MAC_PWR_CTRL, 0);
+	ocp_write_word(tp, MCU_TYPE_PLA, PLA_MAC_PWR_CTRL2, 0);
+	ocp_write_word(tp, MCU_TYPE_PLA, PLA_MAC_PWR_CTRL3, 0);
+	ocp_write_word(tp, MCU_TYPE_PLA, PLA_MAC_PWR_CTRL4, 0);
+
 	r8153_power_cut_en(tp, false);
 	rtl_runtime_suspend_enable(tp, false);
 	r8153_u1u2en(tp, true);
-	r8153_mac_clk_spd(tp, false);
 	usb_enable_lpm(tp->udev);
 	ocp_data = ocp_read_byte(tp, MCU_TYPE_PLA, PLA_CONFIG6);
 	ocp_data |= LANWAKE_CLR_EN;
@@ -15679,7 +15700,7 @@ static void rtl8152_get_strings(struct net_device *dev, u32 stringset, u8 *data)
 {
 	switch (stringset) {
 	case ETH_SS_STATS:
-		memcpy(data, *rtl8152_gstrings, sizeof(rtl8152_gstrings));
+		memcpy(data, rtl8152_gstrings, sizeof(rtl8152_gstrings));
 		break;
 	}
 }
@@ -17273,27 +17294,16 @@ static const struct usb_device_id rtl8152_table[] = {
 	{REALTEK_USB_DEVICE(VENDOR_ID_MICROSOFT, 0x0927)},
 	/* Samsung */
 	{REALTEK_USB_DEVICE(VENDOR_ID_SAMSUNG, 0xa101)},
-	/* Lenovo */
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0x304f)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0x3052)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0x3054)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0x3057)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0x3062)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0x3069)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0x3082)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0x3098)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0x7205)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0x720a)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0x720b)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0x720c)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0x7214)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0x721e)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0x8153)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0xa359)},
-	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO, 0xa387)},
-	/* TP-LINK */
-	{REALTEK_USB_DEVICE(VENDOR_ID_TPLINK, 0x0601)},
-	/* Nvidia */
+	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO,  0x304f)},
+	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO,  0x3054)},
+	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO,  0x3062)},
+	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO,  0x3069)},
+	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO,  0x7205)},
+	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO,  0x720c)},
+	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO,  0x7214)},
+	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO,  0x721e)},
+	{REALTEK_USB_DEVICE(VENDOR_ID_LENOVO,  0xa387)},
+	{REALTEK_USB_DEVICE(VENDOR_ID_LINKSYS, 0x0041)},
 	{REALTEK_USB_DEVICE(VENDOR_ID_NVIDIA,  0x09ff)},
 	/* LINKSYS */
 	{REALTEK_USB_DEVICE(VENDOR_ID_LINKSYS, 0x0041)},

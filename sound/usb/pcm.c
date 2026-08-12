@@ -674,8 +674,7 @@ int snd_usb_enable_audio_stream(struct snd_usb_substream *subs,
 
 	if (!enable) {
 		if (subs->interface >= 0) {
-			usb_set_interface_timeout(subs->dev, subs->interface, 0,
-				MAX_SETALT_TIMEOUT_MS);
+			usb_set_interface(subs->dev, subs->interface, 0);
 			subs->altset_idx = 0;
 			subs->interface = -1;
 			subs->cur_audiofmt = NULL;
@@ -696,7 +695,7 @@ int snd_usb_enable_audio_stream(struct snd_usb_substream *subs,
 	else
 		fmt = find_format(subs);
 	if (!fmt) {
-		dev_err(&subs->dev->dev,
+		dev_dbg(&subs->dev->dev,
 		"cannot set format: format = %#x, rate = %d, channels = %d\n",
 			   subs->pcm_format, subs->cur_rate, subs->channels);
 		return -EINVAL;
@@ -2006,7 +2005,7 @@ void snd_usb_preallocate_buffer(struct snd_usb_substream *subs)
 {
 	struct snd_pcm *pcm = subs->stream->pcm;
 	struct snd_pcm_substream *s = pcm->streams[subs->direction].substream;
-	struct device *dev = subs->dev->bus->controller;
+	struct device *dev = subs->dev->bus->sysdev;
 
 	if (!snd_usb_use_vmalloc)
 		snd_pcm_lib_preallocate_pages(s, SNDRV_DMA_TYPE_DEV_SG,

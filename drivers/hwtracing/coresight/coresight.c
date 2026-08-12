@@ -367,12 +367,9 @@ static int coresight_enable_sink(struct coresight_device *csdev,
 	if (!sink_ops(csdev)->enable)
 		return -EINVAL;
 
-	coresight_enable_reg_clk(csdev);
 	ret = sink_ops(csdev)->enable(csdev, mode, data);
-	if (ret) {
-		coresight_disable_reg_clk(csdev);
+	if (ret)
 		return ret;
-	}
 	csdev->enable = true;
 
 	return 0;
@@ -416,12 +413,8 @@ static int coresight_enable_link(struct coresight_device *csdev,
 	if (link_subtype == CORESIGHT_DEV_SUBTYPE_LINK_SPLIT && outport < 0)
 		return outport;
 
-	if (link_ops(csdev)->enable) {
-		coresight_enable_reg_clk(csdev);
+	if (link_ops(csdev)->enable)
 		ret = link_ops(csdev)->enable(csdev, inport, outport);
-		if (ret)
-			coresight_disable_reg_clk(csdev);
-	}
 	if (!ret)
 		csdev->enable = true;
 
@@ -452,12 +445,8 @@ static void coresight_disable_link(struct coresight_device *csdev,
 		nr_conns = 1;
 	}
 
-	if (coresight_link_late_disable()) {
-		coresight_add_disabled_link(csdev, inport, outport);
-	} else if (link_ops(csdev)->disable) {
+	if (link_ops(csdev)->disable)
 		link_ops(csdev)->disable(csdev, inport, outport);
-		coresight_disable_reg_clk(csdev);
-	}
 
 	for (i = 0; i < nr_conns; i++)
 		if (atomic_read(&csdev->refcnt[i]) != 0)

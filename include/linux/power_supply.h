@@ -176,6 +176,10 @@ enum {
 	POWER_SUPPLY_MOISTURE_FLOATING_CABLE,
 };
 #endif
+	POWER_SUPPLY_ALIGN_CHECKING = 0,
+	POWER_SUPPLY_ALIGN_MOVE,
+	POWER_SUPPLY_ALIGN_CENTERED,
+	POWER_SUPPLY_ALIGN_ERROR,
 
 enum power_supply_property {
 	/* Properties of type `int' */
@@ -370,8 +374,27 @@ enum power_supply_property {
 	POWER_SUPPLY_PROP_COMP_CLAMP_LEVEL,
 	POWER_SUPPLY_PROP_ADAPTER_CC_MODE,
 	POWER_SUPPLY_PROP_SKIN_HEALTH,
+	POWER_SUPPLY_PROP_CHARGE_DISABLE,
+	POWER_SUPPLY_PROP_ADAPTER_DETAILS,
+	POWER_SUPPLY_PROP_DEAD_BATTERY,
+	POWER_SUPPLY_PROP_VOLTAGE_FIFO,
+	POWER_SUPPLY_PROP_CC_UAH,
+	POWER_SUPPLY_PROP_OPERATING_FREQ,
+	POWER_SUPPLY_PROP_AICL_DELAY,
+	POWER_SUPPLY_PROP_AICL_ICL,
+	POWER_SUPPLY_PROP_RTX,
+	POWER_SUPPLY_PROP_CUTOFF_SOC,
+	POWER_SUPPLY_PROP_SYS_SOC,
+	POWER_SUPPLY_PROP_BATT_SOC,
+	/* Capacity Estimation */
+	POWER_SUPPLY_PROP_BATT_CE_CTRL,
+	POWER_SUPPLY_PROP_CHARGE_FULL_ESTIMATE,
+	/* Resistance Estimaton */
+	POWER_SUPPLY_PROP_RESISTANCE_AVG,
+	POWER_SUPPLY_PROP_RES_FILTER_COUNT,
 	POWER_SUPPLY_PROP_AICL_DONE,
 	POWER_SUPPLY_PROP_VOLTAGE_STEP,
+	POWER_SUPPLY_PROP_OTG_FASTROLESWAP,
 	POWER_SUPPLY_PROP_APSD_RERUN,
 	POWER_SUPPLY_PROP_APSD_TIMEOUT,
 	/* Charge pump properties */
@@ -387,13 +410,17 @@ enum power_supply_property {
 	POWER_SUPPLY_PROP_CP_ILIM,
 	POWER_SUPPLY_PROP_IRQ_STATUS,
 	POWER_SUPPLY_PROP_PARALLEL_OUTPUT_MODE,
+	POWER_SUPPLY_PROP_ALIGNMENT,
+	POWER_SUPPLY_PROP_MOISTURE_DETECTION_ENABLE,
 	POWER_SUPPLY_PROP_CC_TOGGLE_ENABLE,
 	POWER_SUPPLY_PROP_FG_TYPE,
 	POWER_SUPPLY_PROP_CHARGER_STATUS,
 	/* Local extensions of type int64_t */
 	POWER_SUPPLY_PROP_CHARGE_COUNTER_EXT,
+	POWER_SUPPLY_PROP_CHARGE_CHARGER_STATE,
 	/* Properties of type `const char *' */
 	POWER_SUPPLY_PROP_MODEL_NAME,
+	POWER_SUPPLY_PROP_PTMC_ID,
 	POWER_SUPPLY_PROP_MANUFACTURER,
 	POWER_SUPPLY_PROP_BATTERY_TYPE,
 	POWER_SUPPLY_PROP_CYCLE_COUNTS,
@@ -468,6 +495,14 @@ enum power_supply_typec_mode {
 	POWER_SUPPLY_TYPEC_SOURCE_DEBUG_ACCESSORY_HIGH,			/* Rp 3A / Rp 3A */
 #endif
 	POWER_SUPPLY_TYPEC_NON_COMPLIANT,
+	POWER_SUPPLY_TYPEC_DAM_DEFAULT,		/* Rp-1.5A/Rp-3A */
+	POWER_SUPPLY_TYPEC_DAM_MEDIUM,		/* Rp-Default/Rp-1.5A */
+	POWER_SUPPLY_TYPEC_DAM_HIGH,		/* Rp-Default/Rp-3A */
+
+	/* Non Compliant */
+	POWER_SUPPLY_TYPEC_RP_STD_STD,		/* Rp-Default/Rp-Default */
+	POWER_SUPPLY_TYPEC_RP_MED_MED,		/* Rp-1.5A/Rp-1.5A */
+	POWER_SUPPLY_TYPEC_RP_HIGH_HIGH,	/* Rp-3A/Rp-3A */
 };
 
 enum power_supply_typec_src_rp {
@@ -651,8 +686,9 @@ extern int power_supply_get_battery_info(struct power_supply *psy,
 					 struct power_supply_battery_info *info);
 extern void power_supply_changed(struct power_supply *psy);
 extern int power_supply_am_i_supplied(struct power_supply *psy);
-extern int power_supply_set_input_current_limit_from_supplier(
-					 struct power_supply *psy);
+int power_supply_get_property_from_supplier(struct power_supply *psy,
+					    enum power_supply_property psp,
+					    union power_supply_propval *val);
 extern int power_supply_set_battery_charged(struct power_supply *psy);
 
 #ifdef CONFIG_POWER_SUPPLY

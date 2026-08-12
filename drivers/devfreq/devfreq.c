@@ -581,6 +581,7 @@ static void devfreq_dev_release(struct device *dev)
 
 	mutex_destroy(&devfreq->lock);
 	mutex_destroy(&devfreq->event_lock);
+	srcu_cleanup_notifier_head(&devfreq->transition_notifier_list);
 	kfree(devfreq);
 }
 
@@ -646,13 +647,8 @@ struct devfreq *devfreq_add_device(struct device *dev,
 		mutex_lock(&devfreq->lock);
 	}
 
-	freq = find_available_min_freq(devfreq);
-	if (freq < 0) {
-		mutex_unlock(&devfreq->lock);
-		err = -EINVAL;
-		goto err_dev;
-	}
-	devfreq->min_freq = devfreq->scaling_min_freq = freq;
+	devfreq->scaling_min_freq = find_available_min_freq(devfreq);
+	devfreq->min_freq = devfreq->scaling_min_freq;
 
 	freq = find_available_max_freq(devfreq);
 	if (freq < 0) {
@@ -897,7 +893,7 @@ int devfreq_resume_device(struct devfreq *devfreq)
 		return -EINVAL;
 
 	mutex_lock(&devfreq->event_lock);
-	if (!devfreq->governor || !devfreq->dev_suspended) {
+	if (!devfreq->governor) {
 		mutex_unlock(&devfreq->event_lock);
 		return 0;
 	}

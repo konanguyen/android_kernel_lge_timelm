@@ -97,8 +97,8 @@ void dmam_free_coherent(struct device *dev, size_t size, void *vaddr,
 {
 	struct dma_devres match_data = { size, vaddr, dma_handle };
 
-	dma_free_coherent(dev, size, vaddr, dma_handle);
 	WARN_ON(devres_destroy(dev, dmam_release, dmam_match, &match_data));
+	dma_free_coherent(dev, size, vaddr, dma_handle);
 }
 EXPORT_SYMBOL(dmam_free_coherent);
 
@@ -321,7 +321,7 @@ void dma_common_free_remap(void *cpu_addr, size_t size, unsigned long vm_flags,
 	struct vm_struct *area = find_vm_area(cpu_addr);
 
 	if (!area || (area->flags & vm_flags) != vm_flags) {
-		WARN(!no_warn, "trying to free invalid coherent area: %pK\n",
+		WARN(!no_warn, "trying to free invalid coherent area: %p\n",
 			cpu_addr);
 		return;
 	}

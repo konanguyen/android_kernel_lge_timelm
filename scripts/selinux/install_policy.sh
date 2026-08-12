@@ -4,15 +4,10 @@ if [ `id -u` -ne 0 ]; then
 	echo "$0: must be root to install the selinux policy"
 	exit 1
 fi
-SF=`which setfiles`
-if [ $? -eq 1 ]; then
-	if [ -f /sbin/setfiles ]; then
-		SF="/usr/setfiles"
-	else
-		echo "no selinux tools installed: setfiles"
-		exit 1
-	fi
-fi
+SF=`which setfiles` || {
+	echo "no selinux tools installed: setfiles"
+	exit 1
+}
 
 cd mdp
 
@@ -57,7 +52,7 @@ fi
 cd /etc/selinux/dummy/contexts/files
 $SF file_contexts /
 
-mounts=`cat /proc/$$/mounts | egrep "ext2|ext3|xfs|jfs|ext4|ext4dev|gfs2" | awk '{ print $2 '}`
+mounts=`cat /proc/$$/mounts | grep -E "ext2|ext3|xfs|jfs|ext4|ext4dev|gfs2" | awk '{ print $2 '}`
 $SF file_contexts $mounts
 
 

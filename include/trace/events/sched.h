@@ -5,6 +5,7 @@
 #if !defined(_TRACE_SCHED_H) || defined(TRACE_HEADER_MULTI_READ)
 #define _TRACE_SCHED_H
 
+#include <linux/kthread.h>
 #include <linux/sched/numa_balancing.h>
 #include <linux/tracepoint.h>
 #include <linux/binfmts.h>
@@ -50,6 +51,89 @@ TRACE_EVENT(sched_kthread_stop_ret,
 	),
 
 	TP_printk("ret=%d", __entry->ret)
+);
+
+/**
+ * sched_kthread_work_queue_work - called when a work gets queued
+ * @worker:	pointer to the kthread_worker
+ * @work:	pointer to struct kthread_work
+ *
+ * This event occurs when a work is queued immediately or once a
+ * delayed work is actually queued (ie: once the delay has been
+ * reached).
+ */
+TRACE_EVENT(sched_kthread_work_queue_work,
+
+	TP_PROTO(struct kthread_worker *worker,
+		 struct kthread_work *work),
+
+	TP_ARGS(worker, work),
+
+	TP_STRUCT__entry(
+		__field( void *,	work	)
+		__field( void *,	function)
+		__field( void *,	worker)
+	),
+
+	TP_fast_assign(
+		__entry->work		= work;
+		__entry->function	= work->func;
+		__entry->worker		= worker;
+	),
+
+	TP_printk("work struct=%p function=%ps worker=%p",
+		  __entry->work, __entry->function, __entry->worker)
+);
+
+/**
+ * sched_kthread_work_execute_start - called immediately before the work callback
+ * @work:	pointer to struct kthread_work
+ *
+ * Allows to track kthread work execution.
+ */
+TRACE_EVENT(sched_kthread_work_execute_start,
+
+	TP_PROTO(struct kthread_work *work),
+
+	TP_ARGS(work),
+
+	TP_STRUCT__entry(
+		__field( void *,	work	)
+		__field( void *,	function)
+	),
+
+	TP_fast_assign(
+		__entry->work		= work;
+		__entry->function	= work->func;
+	),
+
+	TP_printk("work struct %p: function %ps", __entry->work, __entry->function)
+);
+
+/**
+ * sched_kthread_work_execute_end - called immediately after the work callback
+ * @work:	pointer to struct work_struct
+ * @function:   pointer to worker function
+ *
+ * Allows to track workqueue execution.
+ */
+TRACE_EVENT(sched_kthread_work_execute_end,
+
+	TP_PROTO(struct kthread_work *work, kthread_work_func_t function),
+
+	TP_ARGS(work, function),
+
+	TP_STRUCT__entry(
+		__field( void *,	work	)
+		__field( void *,	function)
+	),
+
+	TP_fast_assign(
+		__entry->work		= work;
+		__entry->function	= function;
+	),
+
+	TP_printk("work struct %p: function %ps", __entry->work, __entry->function)
 );
 
 /*
@@ -1108,9 +1192,9 @@ TRACE_EVENT(sched_util_est_cpu,
 	TP_ARGS(cpu, cfs_rq),
 
 	TP_STRUCT__entry(
-		__field(int,		cpu)
-		__field(unsigned int,	util_avg)
-		__field(unsigned int,	util_est_enqueued)
+		__field( int,		cpu			)
+		__field( unsigned int,	util_avg		)
+		__field( unsigned int,	util_est_enqueued	)
 	),
 
 	TP_fast_assign(
@@ -1290,25 +1374,21 @@ TRACE_EVENT(sched_task_util,
 TRACE_EVENT(sched_find_best_target,
 
 	TP_PROTO(struct task_struct *tsk, bool prefer_idle,
-		 unsigned long min_util, int start_cpu,
-		 int best_idle, int best_active, int most_spare_cap,
+		 unsigned long min_util, int best_idle, int best_active,
 		 int target, int backup),
 
-	TP_ARGS(tsk, prefer_idle, min_util, start_cpu,
-		best_idle, best_active, most_spare_cap,
-		target, backup),
+	TP_ARGS(tsk, prefer_idle, min_util, best_idle,
+		best_active, target, backup),
 
 	TP_STRUCT__entry(
-		__array(char,		comm, TASK_COMM_LEN)
-		__field(pid_t,		pid)
-		__field(unsigned long,	min_util)
-		__field(bool,		prefer_idle)
-		__field(int,		start_cpu)
-		__field(int,		best_idle)
-		__field(int,		best_active)
-		__field(int,		most_spare_cap)
-		__field(int,		target)
-		__field(int,		backup)
+		__array( char,  comm,   TASK_COMM_LEN   )
+		__field( pid_t, pid                     )
+		__field( unsigned long, min_util        )
+		__field( bool,  prefer_idle             )
+		__field( int,   best_idle               )
+		__field( int,   best_active             )
+		__field( int,   target                  )
+		__field( int,   backup                  )
 		),
 
 	TP_fast_assign(
@@ -1316,19 +1396,16 @@ TRACE_EVENT(sched_find_best_target,
 		__entry->pid            = tsk->pid;
 		__entry->min_util       = min_util;
 		__entry->prefer_idle    = prefer_idle;
-		__entry->start_cpu      = start_cpu;
 		__entry->best_idle      = best_idle;
 		__entry->best_active    = best_active;
-		__entry->most_spare_cap = most_spare_cap;
 		__entry->target         = target;
 		__entry->backup         = backup;
 		),
 
-	TP_printk("pid=%d comm=%s prefer_idle=%d start_cpu=%d best_idle=%d best_active=%d most_spare_cap=%d target=%d backup=%d",
+	TP_printk("pid=%d comm=%s prefer_idle=%d "
+		  "best_idle=%d best_active=%d target=%d backup=%d",
 		  __entry->pid, __entry->comm, __entry->prefer_idle,
-		  __entry->start_cpu,
 		  __entry->best_idle, __entry->best_active,
-		  __entry->most_spare_cap,
 		  __entry->target, __entry->backup)
 );
 
@@ -1574,97 +1651,24 @@ TRACE_EVENT(sched_boost_task,
 /*
  * Tracepoint for system overutilized flag
 */
+TRACE_EVENT(sched_overutilized,
 
-struct sched_domain;
-TRACE_EVENT_CONDITION(sched_overutilized,
+	TP_PROTO(int overutilized),
 
-	TP_PROTO(struct sched_domain *sd, bool was_overutilized, bool overutilized),
-
-	TP_ARGS(sd, was_overutilized, overutilized),
-
-	TP_CONDITION(overutilized != was_overutilized),
+	TP_ARGS(overutilized),
 
 	TP_STRUCT__entry(
-		__field( bool,	overutilized	  )
-		__array( char,  cpulist , 32      )
+		__field( int,  overutilized    )
 	),
 
 	TP_fast_assign(
-		__entry->overutilized	= overutilized;
-		scnprintf(__entry->cpulist, sizeof(__entry->cpulist), "%*pbl", cpumask_pr_args(sched_domain_span(sd)));
+		__entry->overutilized   = overutilized;
 	),
 
-	TP_printk("overutilized=%d sd_span=%s",
-		__entry->overutilized ? 1 : 0, __entry->cpulist)
+	TP_printk("overutilized=%d",
+		__entry->overutilized)
 );
 
-/*
- * Tracepoint for sched_get_nr_running_avg
- */
-TRACE_EVENT(sched_get_nr_running_avg,
-
-	TP_PROTO(int cpu, int nr, int nr_misfit, int nr_max, int nr_scaled),
-
-	TP_ARGS(cpu, nr, nr_misfit, nr_max, nr_scaled),
-
-	TP_STRUCT__entry(
-		__field(int, cpu)
-		__field(int, nr)
-		__field(int, nr_misfit)
-		__field(int, nr_max)
-		__field( int, nr_scaled)
-	),
-
-	TP_fast_assign(
-		__entry->cpu = cpu;
-		__entry->nr = nr;
-		__entry->nr_misfit = nr_misfit;
-		__entry->nr_max = nr_max;
-		__entry->nr_scaled = nr_scaled;
-	),
-
-	TP_printk("cpu=%d nr=%d nr_misfit=%d nr_max=%d nr_scaled=%d",
-		__entry->cpu, __entry->nr, __entry->nr_misfit, __entry->nr_max,
-		__entry->nr_scaled)
-);
-
-/*
- * sched_isolate - called when cores are isolated/unisolated
- *
- * @acutal_mask: mask of cores actually isolated/unisolated
- * @req_mask: mask of cores requested isolated/unisolated
- * @online_mask: cpu online mask
- * @time: amount of time in us it took to isolate/unisolate
- * @isolate: 1 if isolating, 0 if unisolating
- *
- */
-TRACE_EVENT(sched_isolate,
-
-	TP_PROTO(unsigned int requested_cpu, unsigned int isolated_cpus,
-		u64 start_time, unsigned char isolate),
-
-	TP_ARGS(requested_cpu, isolated_cpus, start_time, isolate),
-
-	TP_STRUCT__entry(
-		__field(u32, requested_cpu)
-		__field(u32, isolated_cpus)
-		__field(u32, time)
-		__field(unsigned char, isolate)
-	),
-
-	TP_fast_assign(
-		__entry->requested_cpu = requested_cpu;
-		__entry->isolated_cpus = isolated_cpus;
-		__entry->time = div64_u64(sched_clock() - start_time, 1000);
-		__entry->isolate = isolate;
-	),
-
-	TP_printk("iso cpu=%u cpus=0x%x time=%u us isolated=%d",
-		__entry->requested_cpu, __entry->isolated_cpus,
-		__entry->time, __entry->isolate)
-);
-
-#include "walt.h"
 #endif /* CONFIG_SMP */
 #endif /* _TRACE_SCHED_H */
 

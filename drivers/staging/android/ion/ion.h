@@ -508,23 +508,9 @@ long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 
 int ion_query_heaps(struct ion_heap_query *query);
 
-static __always_inline int get_pool_fillmark(struct ion_page_pool *pool)
-{
-	return ION_POOL_FILL_MARK / (PAGE_SIZE << pool->order);
-}
-
-static __always_inline int get_pool_lowmark(struct ion_page_pool *pool)
-{
-	return ION_POOL_LOW_MARK / (PAGE_SIZE << pool->order);
-}
-
-static __always_inline bool pool_count_below_lowmark(struct ion_page_pool *pool)
-{
-	return atomic_read(&pool->count) < get_pool_lowmark(pool);
-}
-
-static __always_inline bool pool_fillmark_reached(struct ion_page_pool *pool)
-{
-	return atomic_read(&pool->count) >= get_pool_fillmark(pool);
-}
+#ifdef CONFIG_ION_MODULE
+int ion_add_cma_heaps(void);
+int ion_system_heap_create(void);
+int ion_system_contig_heap_create(void);
+#endif
 #endif /* _ION_H */

@@ -739,12 +739,19 @@ static int tmc_probe(struct amba_device *adev, const struct amba_id *id)
 	if (drvdata->config_type == TMC_CONFIG_TYPE_ETR) {
 		ret = tmc_etr_setup_caps(drvdata, devid, id->data);
 		if (ret)
-			return ret;
-
-		drvdata->byte_cntr = byte_cntr_init(adev, drvdata);
-		ret = tmc_etr_bam_init(adev, drvdata);
-		if (ret)
-			return ret;
+			goto out;
+		idr_init(&drvdata->idr);
+		mutex_init(&drvdata->idr_mutex);
+		break;
+	case TMC_CONFIG_TYPE_ETF:
+		desc.type = CORESIGHT_DEV_TYPE_LINKSINK;
+		desc.subtype.link_subtype = CORESIGHT_DEV_SUBTYPE_LINK_FIFO;
+		desc.ops = &tmc_etf_cs_ops;
+		break;
+	default:
+		pr_err("%s: Unsupported TMC config\n", pdata->name);
+		ret = -EINVAL;
+		goto out;
 	}
 
 	drvdata->csdev = coresight_register(&desc);
@@ -759,12 +766,9 @@ static int tmc_probe(struct amba_device *adev, const struct amba_id *id)
 	ret = misc_register(&drvdata->miscdev);
 	if (ret) {
 		coresight_unregister(drvdata->csdev);
-		return ret;
-	}
-
-	if (!ret)
+	else
 		pm_runtime_put(&adev->dev);
-
+out:
 	return ret;
 }
 
