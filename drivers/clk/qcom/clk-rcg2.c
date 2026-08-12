@@ -239,13 +239,19 @@ static void disable_unprepare_rcg_srcs(struct clk *curr, struct clk *new)
 static unsigned long
 calc_rate(unsigned long rate, u32 m, u32 n, u32 mode, u32 hid_div)
 {
-	if (hid_div)
-		rate = mult_frac(rate, 2, hid_div + 1);
+	u64 tmp = rate;
 
-	if (mode)
-		rate = mult_frac(rate, m, n);
+	if (hid_div) {
+		tmp *= 2;
+		do_div(tmp, hid_div + 1);
+	}
 
-	return rate;
+	if (mode) {
+		tmp *= m;
+		do_div(tmp, n);
+	}
+
+	return tmp;
 }
 
 static unsigned long
@@ -1096,7 +1102,6 @@ static const struct frac_entry frac_table_pixel[] = {
 	{ 2, 9 },
 	{ 4, 9 },
 	{ 1, 1 },
-	{ 2, 3 },
 	{ }
 };
 
