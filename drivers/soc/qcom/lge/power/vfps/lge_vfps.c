@@ -12,10 +12,16 @@
  *
  */
 
-#include <linux/device.h>
-#include <linux/mutex.h>
+#include <drm/drm_crtc.h>
 
 #include "lge_vfps.h"
+
+struct sde_crtc {
+	u64 play_count;
+};
+#ifndef to_sde_crtc
+#define to_sde_crtc(x) ((struct sde_crtc *)NULL)
+#endif
 
 static struct {
 	char         enable;
