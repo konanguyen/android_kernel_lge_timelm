@@ -45,6 +45,8 @@
 #ifdef CONFIG_LGE_USB_SBU_SWITCH
 #include <linux/usb/lge_sbu_switch.h>
 #endif
+#include "../pd/usbpd.h"
+
 
 #if defined(CONFIG_LGE_DISPLAY_COMMON) && defined(CONFIG_DRM_MSM_DP)
 #include "../../../techpack/display/msm/lge/dp/lge_dp_def.h"
