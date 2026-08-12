@@ -18,8 +18,6 @@
 #include "context.h"
 #include "flask.h"
 
-
-
 struct sidtab_entry_leaf {
 	u32 sid;
 	struct context context;
@@ -67,7 +65,7 @@ struct sidtab_isid_entry {
 };
 
 struct sidtab_convert_params {
-	int (*func)(struct context *oldc, struct context *newc, void *args, gfp_t gfp_flags);
+	int (*func)(struct context *oldc, struct context *newc, void *args);
 	void *args;
 	struct sidtab *target;
 };
