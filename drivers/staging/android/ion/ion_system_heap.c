@@ -1039,19 +1039,6 @@ destroy_secure_pools:
 	return ERR_PTR(ret);
 }
 
-int ion_system_heap_create(void)
-{
-	struct ion_heap *heap;
-
-	heap = __ion_system_heap_create();
-	if (IS_ERR(heap))
-		return PTR_ERR(heap);
-	heap->name = "ion_system_heap";
-
-	ion_device_add_heap(heap);
-	return 0;
-}
-
 static int ion_system_contig_heap_allocate(struct ion_heap *heap,
 					   struct ion_buffer *buffer,
 					   unsigned long len,
@@ -1132,20 +1119,3 @@ struct ion_heap *ion_system_contig_heap_create(struct ion_platform_heap *unused)
 	heap->type = ION_HEAP_TYPE_SYSTEM_CONTIG;
 	return heap;
 }
-
-int ion_system_contig_heap_create(void)
-{
-	struct ion_heap *heap;
-
-	heap = __ion_system_contig_heap_create();
-	if (IS_ERR(heap))
-		return PTR_ERR(heap);
-
-	ion_device_add_heap(heap);
-	return 0;
-}
-
-#ifndef CONFIG_ION_MODULE
-device_initcall(ion_system_contig_heap_create);
-device_initcall(ion_system_heap_create);
-#endif

@@ -587,6 +587,8 @@ static struct thermal_cooling_device_ops cpufreq_power_cooling_ops = {
 	.get_max_state		= cpufreq_get_max_state,
 	.get_cur_state		= cpufreq_get_cur_state,
 	.set_cur_state		= cpufreq_set_cur_state,
+	.set_min_state		= cpufreq_set_min_state,
+	.get_min_state		= cpufreq_get_min_state,
 	.get_requested_power	= cpufreq_get_requested_power,
 	.state2power		= cpufreq_state2power,
 	.power2state		= cpufreq_power2state,
@@ -599,6 +601,8 @@ static struct thermal_cooling_device_ops cpufreq_cooling_ops = {
 	.get_max_state = cpufreq_get_max_state,
 	.get_cur_state = cpufreq_get_cur_state,
 	.set_cur_state = cpufreq_set_cur_state,
+	.set_min_state = cpufreq_set_min_state,
+	.get_min_state = cpufreq_get_min_state,
 };
 
 /* Notifier for cpufreq policy change */
@@ -612,8 +616,8 @@ static struct notifier_block thermal_cpufreq_notifier_block = {
  * @policy: cpufreq policy
  * Normally this should be same as cpufreq policy->related_cpus.
  * @try_model: true if a power model should be used
- * @plat_mitig_func: function that does the mitigation by changing the
- *                   frequencies (Optional). By default, cpufreq framweork will
+ * @plat_ops: function that does the mitigation by changing the
+ *                   frequencies (Optional). By default, cpufreq framework will
  *                   be notified of the new limits.
  *
  * This interface function registers the cpufreq cooling device with the name
@@ -783,7 +787,7 @@ EXPORT_SYMBOL_GPL(of_cpufreq_cooling_register);
  * cpufreq_platform_cooling_register() - create cpufreq cooling device with
  * additional platform specific mitigation function.
  *
- * @clip_cpus: cpumask of cpus where the frequency constraints will happen
+ * @policy: cpufreq policy
  * @plat_ops: the platform mitigation functions that will be called insted of
  * cpufreq, if provided.
  *
@@ -792,9 +796,10 @@ EXPORT_SYMBOL_GPL(of_cpufreq_cooling_register);
  */
 struct thermal_cooling_device *
 cpufreq_platform_cooling_register(struct cpufreq_policy *policy,
-				  struct cpu_cooling_ops *plat_ops)
+				struct cpu_cooling_ops *plat_ops)
 {
-	struct device_node *cpu_node;
+	struct device_node *cpu_node = NULL;
+	u32 capacitance = 0;
 	struct thermal_cooling_device *cdev = NULL;
 
 	cpu_node = of_cpu_device_node_get(policy->cpu);
@@ -802,13 +807,22 @@ cpufreq_platform_cooling_register(struct cpufreq_policy *policy,
 		pr_err("No cpu node\n");
 		return ERR_PTR(-EINVAL);
 	}
-	cdev = __cpufreq_cooling_register(cpu_node, policy, false,
-					  plat_ops);
+	if (of_find_property(cpu_node, "#cooling-cells", NULL)) {
+		of_property_read_u32(cpu_node, "dynamic-power-coefficient",
+				     &capacitance);
+
+		cdev = __cpufreq_cooling_register(cpu_node, policy, capacitance,
+							plat_ops);
+		if (IS_ERR(cdev))
+			pr_err("cpu_cooling: cpu%d cooling device err: %ld\n",
+			       policy->cpu, PTR_ERR(cdev));
+	}
 
 	of_node_put(cpu_node);
 	return cdev;
 }
 EXPORT_SYMBOL(cpufreq_platform_cooling_register);
+
 
 /**
  * cpufreq_cooling_unregister - function to remove cpufreq cooling device.
