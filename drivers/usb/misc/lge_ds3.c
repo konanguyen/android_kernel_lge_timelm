@@ -46,8 +46,14 @@
 #include <linux/usb/lge_sbu_switch.h>
 #endif
 
-#include "usbpd.h"
+#ifdef CONFIG_LGE_DISPLAY_COMMON
 #include "../../../techpack/display/msm/lge/dp/lge_dp_def.h"
+#else
+struct lge_dp_display {
+	struct extcon_dev *dd_extcon_sdev[1];
+};
+static inline struct lge_dp_display *get_lge_dp(void) { return NULL; }
+#endif
 extern bool lge_get_mfts_mode(void);
 
 // FIXME : Temporarily disable 2nd USB
@@ -327,7 +333,9 @@ static void ds_set_state(struct ds3 *ds3, enum ds_state next_state);
 
 extern struct hallic_dev luke_sdev;
 extern void request_dualscreen_recovery(void);
+#ifdef CONFIG_LGE_DISPLAY_COMMON
 extern struct lge_dp_display *get_lge_dp(void);
+#endif
 extern void call_disconnect_uevent(void);
 static int check_ds3_accid(struct ds3 *ds3, bool enable, bool use_vadc);
 
@@ -397,7 +405,8 @@ int set_ds_extcon_state(unsigned int id, int state)
 	int ret = 0;
 	struct lge_dp_display *lge_dp = get_lge_dp();
 
-	ret = extcon_set_state_sync(lge_dp->dd_extcon_sdev[0], id, state);
+	if (lge_dp && lge_dp->dd_extcon_sdev[0])
+		ret = extcon_set_state_sync(lge_dp->dd_extcon_sdev[0], id, state);
 
 	return ret;
 }
