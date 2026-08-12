@@ -698,7 +698,7 @@ set_voltage_fail:
 /*
  *  Vote for a voltage level.
  */
-static int clk_vote_vdd_level(struct clk_vdd_class *vdd_class, int level)
+int clk_vote_vdd_level(struct clk_vdd_class *vdd_class, int level)
 {
 	int rc = 0;
 
@@ -721,7 +721,7 @@ static int clk_vote_vdd_level(struct clk_vdd_class *vdd_class, int level)
 /*
  * Remove vote for a voltage level.
  */
-static int clk_unvote_vdd_level(struct clk_vdd_class *vdd_class, int level)
+int clk_unvote_vdd_level(struct clk_vdd_class *vdd_class, int level)
 {
 	int rc = 0;
 
