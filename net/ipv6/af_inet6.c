@@ -114,6 +114,13 @@ bool ipv6_mod_enabled(void)
 }
 EXPORT_SYMBOL_GPL(ipv6_mod_enabled);
 
+static __inline__ struct ipv6_pinfo *inet6_sk_generic(struct sock *sk)
+{
+	const int offset = sk->sk_prot->obj_size - sizeof(struct ipv6_pinfo);
+
+	return (struct ipv6_pinfo *)(((u8 *)sk) + offset);
+}
+
 void inet6_sock_destruct(struct sock *sk)
 {
 	inet6_cleanup_sock(sk);
