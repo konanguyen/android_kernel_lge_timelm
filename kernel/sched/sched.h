@@ -2127,6 +2127,11 @@ static inline u64 sched_ktime_clock(void)
 }
 #endif
 
+#ifdef CONFIG_SCHED_TUNE
+extern unsigned long stune_util(int cpu, unsigned long other_util,
+			struct sched_walt_cpu_load *walt_load);
+#endif
+
 #ifndef arch_scale_freq_capacity
 static __always_inline
 unsigned long arch_scale_freq_capacity(int cpu)

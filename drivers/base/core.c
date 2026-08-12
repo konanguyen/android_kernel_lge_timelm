@@ -1217,7 +1217,7 @@ static void fw_devlink_link_device(struct device *dev)
 		 * until device is bound. Since deferred fw devlink also blocks
 		 * probing, same list hook can be used for deferred_fw_devlink.
 		 */
-		list_add_tail(&dev->links.defer_hook, &deferred_fw_devlink);
+		list_add_tail(&dev->links.defer_sync, &deferred_fw_devlink);
 	}
 
 	if (fw_ret == -ENODEV)

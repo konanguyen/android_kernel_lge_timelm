@@ -68,5 +68,9 @@ int usb_diag_write(struct usb_diag_ch *ch, struct diag_request *d_req)
 {
 	return -ENODEV;
 }
+static inline int usb_diag_request_size(struct usb_diag_ch *ch)
+{
+	return -ENODEV;
+}
 #endif /* CONFIG_USB_F_DIAG */
 #endif /* _DRIVERS_USB_DIAG_H_ */
