@@ -3645,7 +3645,7 @@ static void cgroup_pressure_release(struct kernfs_open_file *of)
 {
 	struct cgroup_file_ctx *ctx = of->priv;
 
-	psi_trigger_destroy(ctx->psi.trigger);
+	psi_trigger_replace(&ctx->psi.trigger, NULL);
 }
 
 bool cgroup_psi_enabled(void)
