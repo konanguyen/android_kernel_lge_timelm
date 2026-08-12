@@ -8,7 +8,6 @@
 #include <linux/of.h>
 #include <linux/sched/core_ctl.h>
 #include <trace/events/sched.h>
-#include <trace/events/walt.h>
 
 /*
  * Scheduler boost is a mechanism to temporarily place tasks on CPUs
