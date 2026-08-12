@@ -1,3 +1,9 @@
 [submodule "KernelSU"]
 	path = KernelSU
 	url = https://github.com/ReSukiSU/ReSukiSU
+[submodule "techpack/audio"]
+	path = techpack/audio
+	url = https://git.codelinaro.org/clo/la/platform/vendor/opensource/audio-kernel.git
+[submodule "techpack/camera"]
+	path = techpack/camera
+	url = https://git.codelinaro.org/clo/la/platform/vendor/opensource/camera-kernel.git
