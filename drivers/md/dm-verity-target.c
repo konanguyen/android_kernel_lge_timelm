@@ -34,8 +34,8 @@
 #define DM_VERITY_OPT_IGN_ZEROES	"ignore_zero_blocks"
 #define DM_VERITY_OPT_AT_MOST_ONCE	"check_at_most_once"
 
-#define DM_VERITY_OPTS_MAX		(3 + DM_VERITY_OPTS_FEC)
-
+#define DM_VERITY_OPTS_MAX		(2 + DM_VERITY_OPTS_FEC)
+#define DM_VERITY_MEMORY_DUMP
 static unsigned dm_verity_prefetch_cluster = DM_VERITY_DEFAULT_PREFETCH_SIZE;
 
 module_param_named(prefetch_cluster, dm_verity_prefetch_cluster, uint, S_IRUGO | S_IWUSR);
@@ -655,7 +655,7 @@ static int verity_verify_io(struct dm_verity_io *io)
 		sector_t cur_block = io->block + b;
 		struct ahash_request *req = verity_io_hash_req(v, io);
 
-		if (v->validated_blocks && bio->bi_status == BLK_STS_OK &&
+		if (v->validated_blocks &&
 		    likely(test_bit(cur_block, v->validated_blocks))) {
 			verity_bv_skip_block(v, io, &io->iter);
 			continue;
@@ -707,7 +707,40 @@ static int verity_verify_io(struct dm_verity_io *io)
 		else if (verity_fec_decode(v, io, DM_VERITY_BLOCK_TYPE_DATA,
 					   cur_block, NULL, &start) == 0)
 			continue;
-		else {
+		else{
+#ifdef DM_VERITY_MEMORY_DUMP
+			DMERR("data block %lu is corrupted", io->block + b);
+			DMERR("iter->sector(%lu), size(%ul), idx(%ul), bvec_done(%ul)",
+				prev_iter.bi_sector, prev_iter.bi_size,
+				prev_iter.bi_idx, prev_iter.bi_bvec_done);
+			DMERR("io : %p, v : %p", io, v);
+
+			verity_print_dump("salt", DUMP_PREFIX_OFFSET,
+							v->salt, v->salt_size);
+			verity_print_dump("result", DUMP_PREFIX_OFFSET,
+							verity_io_real_digest(v, io), v->digest_size);
+			verity_print_dump("io_want_digest", DUMP_PREFIX_OFFSET,
+							verity_io_want_digest(v, io), v->digest_size);
+
+			todo = 1 << v->data_dev_block_bits;
+			do {
+				u8 *page;
+				unsigned len;
+				struct bio_vec bv = bio_iter_iovec(bio, prev_iter);
+
+				page = kmap_atomic(bv.bv_page);
+				len = bv.bv_len;
+				if (likely(len >= todo))
+					len = todo;
+
+				verity_print_dump("block", DUMP_PREFIX_ADDRESS,
+								page + bv.bv_offset, len);
+				kunmap_atomic(page);
+
+				bio_advance_iter(bio, &prev_iter, len);
+				todo -= len;
+			} while (todo);
+#endif // DM_VERITY_MEMORY_DUMP
 			if (bio->bi_status) {
 				/*
 				 * Error correction failed; Just return error
@@ -715,21 +748,12 @@ static int verity_verify_io(struct dm_verity_io *io)
 				return -EIO;
 			}
 			if (verity_handle_err(v, DM_VERITY_BLOCK_TYPE_DATA,
-					      cur_block))
+					   cur_block))
 				return -EIO;
 		}
 	}
 
 	return 0;
-}
-
-/*
- * Skip verity work in response to I/O error when system is shutting down.
- */
-static inline bool verity_is_system_shutting_down(void)
-{
-	return system_state == SYSTEM_HALT || system_state == SYSTEM_POWER_OFF
-		|| system_state == SYSTEM_RESTART;
 }
 
 /*
@@ -760,9 +784,7 @@ static void verity_end_io(struct bio *bio)
 	struct dm_verity_io *io = bio->bi_private;
 
 	if (bio->bi_status &&
-	    (!verity_fec_is_enabled(io->v) ||
-	     verity_is_system_shutting_down() ||
-	     (bio->bi_opf & REQ_RAHEAD))) {
+		(!verity_fec_is_enabled(io->v) || verity_is_system_shutting_down())) {
 		verity_finish_io(io, bio->bi_status);
 		return;
 	}
@@ -1392,7 +1414,6 @@ bad:
 
 static struct target_type verity_target = {
 	.name		= "verity",
-	.features	= DM_TARGET_IMMUTABLE,
 	.version	= {1, 4, 0},
 	.module		= THIS_MODULE,
 	.ctr		= verity_ctr,
