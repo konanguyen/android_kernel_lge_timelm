@@ -46,7 +46,7 @@
 #include <linux/usb/lge_sbu_switch.h>
 #endif
 
-#ifdef CONFIG_LGE_DISPLAY_COMMON
+#if defined(CONFIG_LGE_DISPLAY_COMMON) && defined(CONFIG_DRM_MSM_DP)
 #include "../../../techpack/display/msm/lge/dp/lge_dp_def.h"
 #else
 struct lge_dp_display {
