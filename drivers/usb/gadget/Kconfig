@@ -223,7 +223,13 @@ config USB_F_PRINTER
 config USB_F_TCM
 	tristate
 
-config USB_F_ACC
+config USB_F_DIAG
+	tristate
+
+config USB_F_CDEV
+	tristate
+
+config USB_F_CCID
 	tristate
 
 config USB_F_AUDIO_SRC
@@ -304,7 +310,6 @@ config USB_CONFIGFS_NCM
 	depends on NET
 	select USB_U_ETHER
 	select USB_F_NCM
-	select CRC32
 	help
 	  NCM is an advanced protocol for Ethernet encapsulation, allows
 	  grouping of several ethernet frames into one USB transfer and
@@ -376,7 +381,6 @@ config USB_CONFIGFS_EEM
 	depends on NET
 	select USB_U_ETHER
 	select USB_F_EEM
-	select CRC32
 	help
 	  CDC EEM is a newer USB standard that is somewhat simpler than CDC ECM
 	  and therefore can be supported by more hardware.  Technically ECM and
@@ -442,7 +446,7 @@ config USB_CONFIGFS_F_ACC
 
 config USB_CONFIGFS_F_AUDIO_SRC
 	bool "Audio Source gadget"
-	depends on USB_CONFIGFS
+	depends on USB_CONFIGFS && USB_CONFIGFS_F_ACC
 	depends on SND
 	select SND_PCM
 	select USB_F_AUDIO_SRC
