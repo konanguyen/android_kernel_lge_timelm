@@ -338,7 +338,7 @@ extern void request_dualscreen_recovery(void);
 #ifdef CONFIG_LGE_DISPLAY_COMMON
 extern struct lge_dp_display *get_lge_dp(void);
 #endif
-extern void call_disconnect_uevent(void);
+void __attribute__((weak)) call_disconnect_uevent(void) {}
 static int check_ds3_accid(struct ds3 *ds3, bool enable, bool use_vadc);
 
 void set_hallic_status(bool enable)
