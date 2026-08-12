@@ -1,0 +1,257 @@
+  GEN     ./Makefile
+  Using .. as source for kernel
+  CALL    ../scripts/checksyscalls.sh
+  CHK     include/generated/compile.h
+  CC      arch/arm64/kernel/debug-monitors.o
+  CC      arch/arm64/mm/fault.o
+  CC      arch/arm64/kernel/fpsimd.o
+  CC      arch/arm64/kernel/ptrace.o
+  CC      arch/arm64/kernel/setup.o
+  CC      arch/arm64/kernel/signal.o
+  CC      arch/arm64/kernel/traps.o
+  AR      arch/arm64/mm/built-in.a
+  CC      arch/arm64/kernel/cpufeature.o
+  CHK     kernel/kheaders_data.tar.xz
+  CC      arch/arm64/kernel/signal32.o
+  GEN     kernel/kheaders_data.tar.xz
+  CC      arch/arm64/kernel/hw_breakpoint.o
+  COPY    firmware/almf04/ALMF04_Sar2CNew_V2.04T.fw
+cp: cannot stat '../firmware/almf04/ALMF04_Sar2CNew_V2.04T.fw': No such file or directory
+make[2]: *** [../firmware/Makefile:77: firmware/almf04/ALMF04_Sar2CNew_V2.04T.fw] Error 1
+make[1]: *** [/home/konadev/android_kernel_lge_sm8250/Makefile:1221: firmware] Error 2
+make[1]: *** Waiting for unfinished jobs....
+  CC      drivers/clk/qcom/clk-rcg2.o
+  CC      drivers/clocksource/arm_arch_timer.o
+  CC      drivers/clocksource/dummy_timer.o
+  CC      drivers/clk/qcom/clk-branch.o
+  CC      drivers/clk/clk-bulk.o
+  CC      arch/arm64/kernel/armv8_deprecated.o
+  CC      drivers/clk/qcom/clk-regmap-divider.o
+  AR      drivers/crypto/hisilicon/built-in.a
+  CC      drivers/crypto/msm/qce50.o
+  CC      drivers/clk/qcom/clk-regmap-mux.o
+  CC      drivers/clk/clkdev.o
+  AR      drivers/clocksource/built-in.a
+  CC      drivers/clk/qcom/clk-regmap-mux-div.o
+  CC      drivers/crypto/msm/qcedev.o
+  CC      drivers/clk/clk.o
+  CC      drivers/devfreq/devfreq.o
+  CC      drivers/clk/clk-divider.o
+  CC      arch/arm64/kernel/probes/kprobes.o
+  CC      drivers/clk/qcom/reset.o
+../drivers/clk/clk.c:3267:2: error: expected identifier or '('
+        if (!clk->core->ops->set_flags)
+        ^
+../drivers/clk/clk.c:3270:2: error: expected identifier or '('
+        return clk->core->ops->set_flags(clk->core->hw, flags);
+        ^
+../drivers/clk/clk.c:3271:1: error: extraneous closing brace ('}')
+}
+^
+../drivers/clk/clk.c:3272:1: error: redefinition of '__kstrtab_clk_set_flags'
+EXPORT_SYMBOL_GPL(clk_set_flags);
+^
+../include/linux/export.h:127:2: note: expanded from macro 'EXPORT_SYMBOL_GPL'
+        __EXPORT_SYMBOL(sym, "_gpl")
+        ^
+../include/linux/export.h:120:25: note: expanded from macro '__EXPORT_SYMBOL'
+#define __EXPORT_SYMBOL ___EXPORT_SYMBOL
+                        ^
+../include/linux/export.h:81:20: note: expanded from macro '___EXPORT_SYMBOL'
+        static const char __kstrtab_##sym[]                             \
+                          ^
+<scratch space>:86:1: note: expanded from here
+__kstrtab_clk_set_flags
+^
+../drivers/clk/clk.c:3258:1: note: previous definition is here
+EXPORT_SYMBOL_GPL(clk_set_flags);
+^
+../include/linux/export.h:127:2: note: expanded from macro 'EXPORT_SYMBOL_GPL'
+        __EXPORT_SYMBOL(sym, "_gpl")
+        ^
+../include/linux/export.h:120:25: note: expanded from macro '__EXPORT_SYMBOL'
+#define __EXPORT_SYMBOL ___EXPORT_SYMBOL
+                        ^
+../include/linux/export.h:81:20: note: expanded from macro '___EXPORT_SYMBOL'
+        static const char __kstrtab_##sym[]                             \
+                          ^
+<scratch space>:62:1: note: expanded from here
+__kstrtab_clk_set_flags
+^
+../drivers/clk/clk.c:3711:6: error: redefinition of 'clk_debug_print_hw'
+void clk_debug_print_hw(struct clk_core *clk, struct seq_file *f)
+     ^
+../drivers/clk/clk.c:3260:6: note: previous definition is here
+void clk_debug_print_hw(struct clk_core *clk, struct seq_file *f)
+     ^
+../drivers/clk/clk.c:3725:1: error: redefinition of '__kstrtab_clk_debug_print_hw'
+EXPORT_SYMBOL(clk_debug_print_hw);
+^
+../include/linux/export.h:124:2: note: expanded from macro 'EXPORT_SYMBOL'
+        __EXPORT_SYMBOL(sym, "")
+        ^
+../include/linux/export.h:120:25: note: expanded from macro '__EXPORT_SYMBOL'
+#define __EXPORT_SYMBOL ___EXPORT_SYMBOL
+                        ^
+../include/linux/export.h:81:20: note: expanded from macro '___EXPORT_SYMBOL'
+        static const char __kstrtab_##sym[]                             \
+                          ^
+<scratch space>:190:1: note: expanded from here
+__kstrtab_clk_debug_print_hw
+^
+../drivers/clk/clk.c:3263:1: note: previous definition is here
+EXPORT_SYMBOL(clk_debug_print_hw);
+^
+../include/linux/export.h:124:2: note: expanded from macro 'EXPORT_SYMBOL'
+        __EXPORT_SYMBOL(sym, "")
+        ^
+../include/linux/export.h:120:25: note: expanded from macro '__EXPORT_SYMBOL'
+#define __EXPORT_SYMBOL ___EXPORT_SYMBOL
+                        ^
+../include/linux/export.h:81:20: note: expanded from macro '___EXPORT_SYMBOL'
+        static const char __kstrtab_##sym[]                             \
+                          ^
+<scratch space>:74:1: note: expanded from here
+__kstrtab_clk_debug_print_hw
+^
+6 errors generated.
+make[3]: *** [../scripts/Makefile.build:338: drivers/clk/clk.o] Error 1
+make[3]: *** Waiting for unfinished jobs....
+  CC      drivers/clk/qcom/clk-voter.o
+  AR      drivers/dma/mediatek/built-in.a
+  CC      drivers/dma/qcom/gpi.o
+  AR      arch/arm64/kernel/probes/built-in.a
+  CC      drivers/clk/qcom/clk-dummy.o
+  AR      drivers/dma/ti/built-in.a
+  CC      drivers/crypto/msm/qcedev_smmu.o
+  AR      arch/arm64/kernel/built-in.a
+  CC      drivers/devfreq/governor_simpleondemand.o
+  CC      drivers/dma-buf/dma-buf.o
+  CC      drivers/devfreq/governor_performance.o
+../drivers/dma-buf/dma-buf.c:107:13: error: use of undeclared identifier 'dentry'
+        spin_lock(&dentry->d_lock);
+                   ^
+../drivers/dma-buf/dma-buf.c:108:11: error: use of undeclared identifier 'dentry'
+        dmabuf = dentry->d_fsdata;
+                 ^
+../drivers/dma-buf/dma-buf.c:110:16: error: use of undeclared identifier 'dentry'
+                spin_unlock(&dentry->d_lock);
+                             ^
+../drivers/dma-buf/dma-buf.c:113:15: error: use of undeclared identifier 'dentry'
+        spin_unlock(&dentry->d_lock);
+                     ^
+../drivers/dma-buf/dma-buf.c:116:3: error: use of undeclared identifier 'ret'
+                ret = strlcpy(name, dmabuf->name, DMA_BUF_NAME_LEN);
+                ^
+../drivers/dma-buf/dma-buf.c:116:17: error: use of undeclared identifier 'name'
+                ret = strlcpy(name, dmabuf->name, DMA_BUF_NAME_LEN);
+                              ^
+../drivers/dma-buf/dma-buf.c:118:2: error: implicit declaration of function 'dmabuf_dent_put' [-Werror,-Wimplicit-function-declaration]
+        dmabuf_dent_put(dmabuf);
+        ^
+../drivers/dma-buf/dma-buf.c:121:30: error: use of undeclared identifier 'ret'
+                             dentry->d_name.name, ret > 0 ? name : "");
+                                                  ^
+../drivers/dma-buf/dma-buf.c:121:40: error: use of undeclared identifier 'name'
+                             dentry->d_name.name, ret > 0 ? name : "");
+                                                            ^
+../drivers/dma-buf/dma-buf.c:120:23: error: use of undeclared identifier 'dentry'
+        return dynamic_dname(dentry, buffer, buflen, "/%s:%s",
+                             ^
+../drivers/dma-buf/dma-buf.c:120:31: error: use of undeclared identifier 'buffer'
+        return dynamic_dname(dentry, buffer, buflen, "/%s:%s",
+                                     ^
+../drivers/dma-buf/dma-buf.c:120:39: error: use of undeclared identifier 'buflen'
+        return dynamic_dname(dentry, buffer, buflen, "/%s:%s",
+                                             ^
+../drivers/dma-buf/dma-buf.c:121:9: error: use of undeclared identifier 'dentry'
+                             dentry->d_name.name, ret > 0 ? name : "");
+                             ^
+../drivers/dma-buf/dma-buf.c:124:13: error: conflicting types for 'dma_buf_release'
+static void dma_buf_release(struct dentry *dentry)
+            ^
+../drivers/dma-buf/dma-buf.c:102:12: note: previous definition is here
+static int dma_buf_release(struct inode *inode, struct file *file)
+           ^
+../drivers/dma-buf/dma-buf.c:165:2: error: void function 'dma_buf_release' should not return a value [-Wreturn-type]
+        return 0;
+        ^      ~
+../drivers/dma-buf/dma-buf.c:168:39: error: redefinition of 'dma_buf_dentry_ops'
+static const struct dentry_operations dma_buf_dentry_ops = {
+                                      ^
+../drivers/dma-buf/dma-buf.c:83:39: note: previous definition is here
+static const struct dentry_operations dma_buf_dentry_ops = {
+                                      ^
+../drivers/dma-buf/dma-buf.c:175:23: error: redefinition of 'dma_buf_fs_mount'
+static struct dentry *dma_buf_fs_mount(struct file_system_type *fs_type,
+                      ^
+../drivers/dma-buf/dma-buf.c:89:23: note: previous definition is here
+static struct dentry *dma_buf_fs_mount(struct file_system_type *fs_type,
+                      ^
+../drivers/dma-buf/dma-buf.c:507:13: error: use of undeclared identifier 'dma_buf_file_release'; did you mean 'dma_buf_release'?
+        .release        = dma_buf_file_release,
+                          ^~~~~~~~~~~~~~~~~~~~
+                          dma_buf_release
+../drivers/dma-buf/dma-buf.c:102:12: note: 'dma_buf_release' declared here
+static int dma_buf_release(struct inode *inode, struct file *file)
+           ^
+../drivers/dma-buf/dma-buf.c:629:32: error: use of undeclared identifier 'name_counter'; did you mean 'mm_counter'?
+        cnt = atomic_long_inc_return(&name_counter);
+                                      ^~~~~~~~~~~~
+                                      mm_counter
+../include/linux/mm.h:1796:19: note: 'mm_counter' declared here
+static inline int mm_counter(struct page *page)
+                  ^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+make[3]: *** [../scripts/Makefile.build:338: drivers/dma-buf/dma-buf.o] Error 1
+make[2]: *** [../scripts/Makefile.build:642: drivers/dma-buf] Error 2
+make[2]: *** Waiting for unfinished jobs....
+  CC      drivers/clk/qcom/clk-debug.o
+  CC      drivers/devfreq/governor_powersave.o
+  CC      drivers/crypto/msm/qcrypto.o
+  AR      drivers/dma/xilinx/built-in.a
+  CC      drivers/clk/qcom/gdsc-regulator.o
+  CC      drivers/devfreq/governor_userspace.o
+  CC      drivers/devfreq/governor_passive.o
+  CC      drivers/clk/qcom/gdsc.o
+  AR      drivers/dma/qcom/built-in.a
+  CC      drivers/dma/dmaengine.o
+  CC      drivers/devfreq/bimc-bwmon.o
+  CC      drivers/dma/virt-dma.o
+  CC      drivers/clk/qcom/camcc-kona.o
+  CC      drivers/dma/of-dma.o
+  CC      drivers/clk/qcom/clk-aop-qmp.o
+  CC      drivers/devfreq/arm-memlat-mon.o
+  CC      drivers/clk/qcom/debugcc-kona.o
+  CC      drivers/clk/qcom/dispcc-kona.o
+  CC      drivers/devfreq/governor_bw_hwmon.o
+  AR      drivers/dma/built-in.a
+  CC      drivers/devfreq/governor_cache_hwmon.o
+  CC      drivers/clk/qcom/gcc-kona.o
+  CC      drivers/clk/qcom/gpucc-kona.o
+  CC      drivers/devfreq/governor_memlat.o
+  CC      drivers/clk/qcom/npucc-kona.o
+  CC      drivers/clk/qcom/videocc-kona.o
+  CC      drivers/clk/qcom/a53-pll.o
+  CC      drivers/devfreq/governor_msm_adreno_tz.o
+  CC      drivers/devfreq/governor_bw_vbif.o
+  CC      drivers/clk/qcom/apcs-msm8916.o
+  CC      drivers/devfreq/governor_gpubw_mon.o
+  CC      drivers/clk/qcom/clk-rpmh.o
+  CC      drivers/clk/qcom/clk-spmi-pmic-div.o
+  CC      drivers/devfreq/governor_cdsp_l3.o
+  AR      drivers/crypto/msm/built-in.a
+  AR      drivers/crypto/built-in.a
+  CC      drivers/devfreq/devfreq_qcom_fw.o
+  CC      drivers/devfreq/devfreq_devbw.o
+  CC      drivers/devfreq/devfreq_simple_dev.o
+  CC      drivers/devfreq/devfreq_qcom_qoslat.o
+  CC      drivers/devfreq/governor_staticmap.o
+  AR      drivers/clk/qcom/built-in.a
+make[2]: *** [../scripts/Makefile.build:642: drivers/clk] Error 2
+  AR      drivers/devfreq/built-in.a
+make[1]: *** [/home/konadev/android_kernel_lge_sm8250/Makefile:1221: drivers] Error 2
+  CC      kernel/kheaders.o
+  AR      kernel/built-in.a
+make: *** [Makefile:153: sub-make] Error 2

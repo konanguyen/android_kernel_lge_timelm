@@ -128,4 +128,9 @@ extern int do_tlb_conf_fault(unsigned long addr,
 			     unsigned int esr,
 			     struct pt_regs *regs);
 
+/* Timer hook initializations */
+extern void get_timer_freq_hook_init(void);
+extern void get_timer_count_hook_init(void);
+
 #endif
+

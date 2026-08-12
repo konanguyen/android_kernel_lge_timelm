@@ -1,0 +1,62 @@
+  GEN     ./Makefile
+  Using .. as source for kernel
+  CALL    ../scripts/checksyscalls.sh
+  CHK     include/generated/compile.h
+  CC      arch/arm64/kernel/debug-monitors.o
+  CC      arch/arm64/mm/fault.o
+  CC      arch/arm64/kernel/fpsimd.o
+  CC      arch/arm64/kernel/ptrace.o
+  CC      arch/arm64/kernel/setup.o
+  CC      arch/arm64/kernel/signal.o
+  CC      arch/arm64/kernel/traps.o
+In file included from ../arch/arm64/kernel/debug-monitors.c:36:
+../arch/arm64/include/asm/traps.h:18:2: error: unterminated conditional directive
+#ifndef __ASM_TRAP_H
+ ^
+1 error generated.
+make[2]: *** [../scripts/Makefile.build:338: arch/arm64/kernel/debug-monitors.o] Error 1
+In file included from ../arch/arm64/kernel/fpsimd.c:50:
+../arch/arm64/include/asm/traps.h:18:2: error: unterminated conditional directive
+#ifndef __ASM_TRAP_H
+ ^
+make[2]: *** Waiting for unfinished jobs....
+In file included from ../arch/arm64/mm/fault.c:47:
+../arch/arm64/include/asm/traps.h:18:2: error: unterminated conditional directive
+#ifndef __ASM_TRAP_H
+ ^
+1 error generated.
+make[2]: *** [../scripts/Makefile.build:338: arch/arm64/kernel/fpsimd.o] Error 1
+1 error generated.
+make[2]: *** [../scripts/Makefile.build:338: arch/arm64/mm/fault.o] Error 1
+In file included from ../arch/arm64/kernel/setup.c:61make[1]: *** [/home/konadev/android_kernel_lge_sm8250/Makefile:1221: arch/arm64/mm] Error 2
+:
+../arch/arm64/include/asm/traps.h:18:2: error: unterminated conditional directive
+make[1]: *** Waiting for unfinished jobs....
+#ifndef __ASM_TRAP_H
+ ^
+1 error generated.
+make[2]: *** [../scripts/Makefile.build:338: arch/arm64/kernel/setup.o] Error 1
+In file included from ../arch/arm64/kernel/traps.c:48:
+../arch/arm64/include/asm/traps.h:18:2: error: unterminated conditional directive
+#ifndef __ASM_TRAP_H
+ ^
+1 error generated.
+In file included from ../arch/arm64/kernel/ptrace.c:51:
+../arch/arm64/include/asm/traps.h:18:2: error: unterminated conditional directive
+#ifndef __ASM_TRAP_H
+ ^
+make[2]: *** [../scripts/Makefile.build:338: arch/arm64/kernel/traps.o] Error 1
+1 error generated.
+make[2]: *** [../scripts/Makefile.build:338: arch/arm64/kernel/ptrace.o] Error 1
+In file included from ../arch/arm64/kernel/signal.c:44:
+../arch/arm64/include/asm/traps.h:18:2: error: unterminated conditional directive
+#ifndef __ASM_TRAP_H
+ ^
+1 error generated.
+make[2]: *** [../scripts/Makefile.build:338: arch/arm64/kernel/signal.o] Error 1
+make[1]: *** [/home/konadev/android_kernel_lge_sm8250/Makefile:1221: arch/arm64/kernel] Error 2
+  CHK     kernel/kheaders_data.tar.xz
+  GEN     kernel/kheaders_data.tar.xz
+  CC      kernel/kheaders.o
+  AR      kernel/built-in.a
+make: *** [Makefile:153: sub-make] Error 2

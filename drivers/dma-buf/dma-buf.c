@@ -49,19 +49,6 @@ struct dma_buf_list {
 	struct mutex lock;
 };
 
-struct dma_info {
-	struct dma_buf *dmabuf;
-	struct hlist_node head;
-};
-
-struct dma_proc {
-	char name[TASK_COMM_LEN];
-	pid_t pid;
-	size_t size;
-	struct hlist_head dma_bufs[1 << 10];
-	struct list_head head;
-};
-
 static struct dma_buf_list db_list;
 
 static char *dmabuffs_dname(struct dentry *dentry, char *buffer, int buflen)
@@ -104,33 +91,11 @@ static int dma_buf_release(struct inode *inode, struct file *file)
 	struct dma_buf *dmabuf;
 	int dtor_ret = 0;
 
-	spin_lock(&dentry->d_lock);
-	dmabuf = dentry->d_fsdata;
-	if (!dmabuf || !atomic_add_unless(&dmabuf->dent_count, 1, 0)) {
-		spin_unlock(&dentry->d_lock);
-		goto out;
-	}
-	spin_unlock(&dentry->d_lock);
-	spin_lock(&dmabuf->name_lock);
-	if (dmabuf->name)
-		ret = strlcpy(name, dmabuf->name, DMA_BUF_NAME_LEN);
-	spin_unlock(&dmabuf->name_lock);
-	dmabuf_dent_put(dmabuf);
-out:
-	return dynamic_dname(dentry, buffer, buflen, "/%s:%s",
-			     dentry->d_name.name, ret > 0 ? name : "");
-}
+	if (!is_dma_buf_file(file))
+		return -EINVAL;
 
-static void dma_buf_release(struct dentry *dentry)
-{
-	struct dma_buf *dmabuf;
-	int dtor_ret = 0;
+	dmabuf = file->private_data;
 
-	dmabuf = dentry->d_fsdata;
-
-	spin_lock(&dentry->d_lock);
-	dentry->d_fsdata = NULL;
-	spin_unlock(&dentry->d_lock);
 	BUG_ON(dmabuf->vmapping_counter);
 
 	/*
@@ -164,26 +129,6 @@ static void dma_buf_release(struct dentry *dentry)
 	kfree(dmabuf);
 	return 0;
 }
-
-static const struct dentry_operations dma_buf_dentry_ops = {
-	.d_dname = dmabuffs_dname,
-	.d_release = dma_buf_release,
-};
-
-static struct vfsmount *dma_buf_mnt;
-
-static struct dentry *dma_buf_fs_mount(struct file_system_type *fs_type,
-		int flags, const char *name, void *data)
-{
-	return mount_pseudo(fs_type, "dmabuf:", NULL, &dma_buf_dentry_ops,
-			DMA_BUF_MAGIC);
-}
-
-static struct file_system_type dma_buf_fs_type = {
-	.name = "dmabuf",
-	.mount = dma_buf_fs_mount,
-	.kill_sb = kill_anon_super,
-};
 
 static int dma_buf_mmap_internal(struct file *file, struct vm_area_struct *vma)
 {
@@ -380,13 +325,6 @@ out:
 	return events;
 }
 
-static int dma_buf_begin_cpu_access_umapped(struct dma_buf *dmabuf,
-					    enum dma_data_direction direction);
-
-
-static int dma_buf_end_cpu_access_umapped(struct dma_buf *dmabuf,
-					  enum dma_data_direction direction);
-
 /**
  * dma_buf_set_name - Set a name to a specific dma_buf to track the usage.
  * The name of the dma-buf buffer can only be set when the dma-buf is not
@@ -504,7 +442,7 @@ static void dma_buf_show_fdinfo(struct seq_file *m, struct file *file)
 }
 
 static const struct file_operations dma_buf_fops = {
-	.release	= dma_buf_file_release,
+	.release	= dma_buf_release,
 	.mmap		= dma_buf_mmap_internal,
 	.llseek		= dma_buf_llseek,
 	.poll		= dma_buf_poll,
@@ -603,9 +541,7 @@ struct dma_buf *dma_buf_export(const struct dma_buf_export_info *exp_info)
 	struct reservation_object *resv = exp_info->resv;
 	struct file *file;
 	size_t alloc_size = sizeof(struct dma_buf);
-	char *bufname;
 	int ret;
-	long cnt;
 
 	if (!exp_info->resv)
 		alloc_size += sizeof(struct reservation_object);
@@ -626,17 +562,10 @@ struct dma_buf *dma_buf_export(const struct dma_buf_export_info *exp_info)
 	if (!try_module_get(exp_info->owner))
 		return ERR_PTR(-ENOENT);
 
-	cnt = atomic_long_inc_return(&name_counter);
-	bufname = kasprintf(GFP_KERNEL, "dmabuf%ld", cnt);
-	if (!bufname) {
-		ret = -ENOMEM;
-		goto err_module;
-	}
-
 	dmabuf = kzalloc(alloc_size, GFP_KERNEL);
 	if (!dmabuf) {
 		ret = -ENOMEM;
-		goto err_name;
+		goto err_module;
 	}
 
 	dmabuf->priv = exp_info->priv;
@@ -647,10 +576,6 @@ struct dma_buf *dma_buf_export(const struct dma_buf_export_info *exp_info)
 	init_waitqueue_head(&dmabuf->poll);
 	dmabuf->cb_excl.poll = dmabuf->cb_shared.poll = &dmabuf->poll;
 	dmabuf->cb_excl.active = dmabuf->cb_shared.active = 0;
-	dmabuf->buf_name = bufname;
-	dmabuf->name = bufname;
-	dmabuf->ktime = ktime_get();
-	atomic_set(&dmabuf->dent_count, 1);
 
 	if (!resv) {
 		resv = (struct reservation_object *)&dmabuf[1];
@@ -671,9 +596,6 @@ struct dma_buf *dma_buf_export(const struct dma_buf_export_info *exp_info)
 	spin_lock_init(&dmabuf->name_lock);
 	INIT_LIST_HEAD(&dmabuf->attachments);
 
-	dma_buf_ref_init(dmabuf);
-	dma_buf_ref_mod(dmabuf, 1);
-
 	mutex_lock(&db_list.lock);
 	list_add(&dmabuf->list_node, &db_list.head);
 	mutex_unlock(&db_list.lock);
@@ -682,8 +604,6 @@ struct dma_buf *dma_buf_export(const struct dma_buf_export_info *exp_info)
 
 err_dmabuf:
 	kfree(dmabuf);
-err_name:
-	kfree(bufname);
 err_module:
 	module_put(exp_info->owner);
 	return ERR_PTR(ret);
@@ -735,7 +655,6 @@ struct dma_buf *dma_buf_get(int fd)
 		fput(file);
 		return ERR_PTR(-EINVAL);
 	}
-	dma_buf_ref_mod(file->private_data, 1);
 
 	return file->private_data;
 }
@@ -756,7 +675,6 @@ void dma_buf_put(struct dma_buf *dmabuf)
 	if (WARN_ON(!dmabuf || !dmabuf->file))
 		return;
 
-	dma_buf_ref_mod(dmabuf, -1);
 	fput(dmabuf->file);
 }
 EXPORT_SYMBOL_GPL(dma_buf_put);
@@ -1407,7 +1325,7 @@ static int dma_buf_debug_show(struct seq_file *s, void *unused)
 		}
 		rcu_read_unlock();
 
-//		seq_puts(s, "\tAttached Devices:\n");
+		seq_puts(s, "\tAttached Devices:\n");
 		attach_count = 0;
 
 		list_for_each_entry(attach_obj, &buf_obj->attachments, node) {
@@ -1415,10 +1333,8 @@ static int dma_buf_debug_show(struct seq_file *s, void *unused)
 			attach_count++;
 		}
 
-//		seq_printf(s, "Total %d devices attached\n\n",
-//				attach_count);
-
-		dma_buf_ref_show(s, buf_obj);
+		seq_printf(s, "Total %d devices attached\n\n",
+				attach_count);
 
 		count++;
 		size += buf_obj->size;
@@ -1443,142 +1359,6 @@ static const struct file_operations dma_buf_debug_fops = {
 	.release        = single_release,
 };
 
-static int get_dma_info(const void *data, struct file *file, unsigned int n)
-{
-	struct dma_proc *dma_proc;
-	struct dma_info *dma_info;
-
-	dma_proc = (struct dma_proc *)data;
-	if (!is_dma_buf_file(file))
-		return 0;
-
-	hash_for_each_possible(dma_proc->dma_bufs, dma_info,
-			       head, (unsigned long)file->private_data)
-		if (file->private_data == dma_info->dmabuf)
-			return 0;
-
-	dma_info = kzalloc(sizeof(*dma_info), GFP_ATOMIC);
-	if (!dma_info)
-		return -ENOMEM;
-
-	get_file(file);
-	dma_info->dmabuf = file->private_data;
-	dma_proc->size += dma_info->dmabuf->size / SZ_1K;
-	hash_add(dma_proc->dma_bufs, &dma_info->head,
-			(unsigned long)dma_info->dmabuf);
-	return 0;
-}
-
-static void write_proc(struct seq_file *s, struct dma_proc *proc)
-{
-	struct dma_info *tmp;
-	int i;
-
-	seq_printf(s, "\n%s (PID %d) size: %ld\nDMA Buffers:\n",
-		proc->name, proc->pid, proc->size);
-	seq_printf(s, "%-8s\t%-8s\t%-8s\n",
-		"Name", "Size (KB)", "Time Alive (sec)");
-
-	hash_for_each(proc->dma_bufs, i, tmp, head) {
-		struct dma_buf *dmabuf = tmp->dmabuf;
-		ktime_t elapmstime = ktime_ms_delta(ktime_get(), dmabuf->ktime);
-
-		elapmstime = ktime_divns(elapmstime, MSEC_PER_SEC);
-		seq_printf(s, "%-8s\t%-8ld\t%-8lld\n",
-				dmabuf->buf_name,
-				dmabuf->size / SZ_1K,
-				elapmstime);
-	}
-}
-
-static void free_proc(struct dma_proc *proc)
-{
-	struct dma_info *tmp;
-	struct hlist_node *n;
-	int i;
-
-	hash_for_each_safe(proc->dma_bufs, i, n, tmp, head) {
-		fput(tmp->dmabuf->file);
-		hash_del(&tmp->head);
-		kfree(tmp);
-	}
-	kfree(proc);
-}
-
-static int proccmp(void *unused, struct list_head *a, struct list_head *b)
-{
-	struct dma_proc *a_proc, *b_proc;
-
-	a_proc = list_entry(a, struct dma_proc, head);
-	b_proc = list_entry(b, struct dma_proc, head);
-	return b_proc->size - a_proc->size;
-}
-
-static int dma_procs_debug_show(struct seq_file *s, void *unused)
-{
-	struct task_struct *task, *thread;
-	struct files_struct *files;
-	int ret = 0;
-	struct dma_proc *tmp, *n;
-	LIST_HEAD(plist);
-
-	rcu_read_lock();
-	for_each_process(task) {
-		struct files_struct *group_leader_files = NULL;
-
-		tmp = kzalloc(sizeof(*tmp), GFP_ATOMIC);
-		if (!tmp) {
-			ret = -ENOMEM;
-			rcu_read_unlock();
-			goto mem_err;
-		}
-		hash_init(tmp->dma_bufs);
-		for_each_thread(task, thread) {
-			task_lock(thread);
-			if (unlikely(!group_leader_files))
-				group_leader_files = task->group_leader->files;
-			files = thread->files;
-			if (files && (group_leader_files != files ||
-				      thread == task->group_leader))
-				ret = iterate_fd(files, 0, get_dma_info, tmp);
-			task_unlock(thread);
-		}
-		if (ret || hash_empty(tmp->dma_bufs))
-			goto skip;
-		get_task_comm(tmp->name, task);
-		tmp->pid = task->tgid;
-		list_add(&tmp->head, &plist);
-		continue;
-skip:
-		free_proc(tmp);
-	}
-	rcu_read_unlock();
-
-	list_sort(NULL, &plist, proccmp);
-	list_for_each_entry(tmp, &plist, head)
-		write_proc(s, tmp);
-
-	ret = 0;
-mem_err:
-	list_for_each_entry_safe(tmp, n, &plist, head) {
-		list_del(&tmp->head);
-		free_proc(tmp);
-	}
-	return ret;
-}
-
-static int dma_procs_debug_open(struct inode *f_inode, struct file *file)
-{
-	return single_open(file, dma_procs_debug_show, NULL);
-}
-
-static const struct file_operations dma_procs_debug_fops = {
-	.open           = dma_procs_debug_open,
-	.read           = seq_read,
-	.llseek         = seq_lseek,
-	.release        = single_release
-};
-
 static struct dentry *dma_buf_debugfs_dir;
 
 static int dma_buf_init_debugfs(void)
@@ -1596,17 +1376,6 @@ static int dma_buf_init_debugfs(void)
 				NULL, &dma_buf_debug_fops);
 	if (IS_ERR(d)) {
 		pr_debug("dma_buf: debugfs: failed to create node bufinfo\n");
-		debugfs_remove_recursive(dma_buf_debugfs_dir);
-		dma_buf_debugfs_dir = NULL;
-		err = PTR_ERR(d);
-		return err;
-	}
-
-	d = debugfs_create_file("dmaprocs", 0444, dma_buf_debugfs_dir,
-				NULL, &dma_procs_debug_fops);
-
-	if (IS_ERR(d)) {
-		pr_debug("dma_buf: debugfs: failed to create node dmaprocs\n");
 		debugfs_remove_recursive(dma_buf_debugfs_dir);
 		dma_buf_debugfs_dir = NULL;
 		err = PTR_ERR(d);

@@ -1,0 +1,21 @@
+  HOSTCC  scripts/basic/fixdep
+  GEN     ./Makefile
+  HOSTCC  scripts/kconfig/conf.o
+  YACC    scripts/kconfig/zconf.tab.c
+  LEX     scripts/kconfig/zconf.lex.c
+  HOSTCC  scripts/kconfig/zconf.tab.o
+  HOSTLD  scripts/kconfig/conf
+scripts/kconfig/conf  --syncconfig Kconfig
+net/mptcp/Kconfig:52:warning: choice default symbol 'DEFAULT' is not contained in the choice
+net/mptcp/Kconfig:114:warning: choice default symbol 'DEFAULT' is not contained in the choice
+***
+*** Configuration file ".config" not found!
+***
+*** Please run some configurator (e.g. "make oldconfig" or
+*** "make menuconfig" or "make xconfig").
+***
+make[3]: *** [../scripts/kconfig/Makefile:69: syncconfig] Error 1
+make[2]: *** [../Makefile:568: syncconfig] Error 2
+/home/konadev/android_kernel_lge_sm8250/Makefile:665: include/config/auto.conf.cmd: No such file or directory
+make[1]: *** [/home/konadev/android_kernel_lge_sm8250/Makefile:677: include/config/auto.conf] Error 2
+make: *** [Makefile:153: sub-make] Error 2

@@ -1,0 +1,66 @@
+  GEN     ./Makefile
+  Using .. as source for kernel
+  CALL    ../scripts/checksyscalls.sh
+  CHK     include/generated/compile.h
+  CHK     kernel/kheaders_data.tar.xz
+  COPY    firmware/almf04/ALMF04_Sar2CNew_V2.04T.fw
+cp: cannot stat '../firmware/almf04/ALMF04_Sar2CNew_V2.04T.fw': No such file or directory
+make[2]: *** [../firmware/Makefile:77: firmware/almf04/ALMF04_Sar2CNew_V2.04T.fw] Error 1
+make[1]: *** [/home/konadev/android_kernel_lge_sm8250/Makefile:1221: firmware] Error 2
+make[1]: *** Waiting for unfinished jobs....
+  CC      drivers/char/random.o
+  CC      drivers/clocksource/arm_arch_timer.o
+  CC      drivers/cpufreq/cpufreq.o
+  CC      drivers/char/ttyprintk.o
+  CC      drivers/clk/qcom/clk-rcg2.o
+  CC      drivers/cpufreq/freq_table.o
+  CC      drivers/cpuidle/governors/menu.o
+../drivers/clocksource/arm_arch_timer.c:1556:2: error: implicit declaration of function 'get_timer_count_hook_init' [-Werror,-Wimplicit-function-declaration]
+        get_timer_count_hook_init();
+        ^
+../drivers/clocksource/arm_arch_timer.c:1557:2: error: implicit declaration of function 'get_timer_freq_hook_init' [-Werror,-Wimplicit-function-declaration]
+        get_timer_freq_hook_init();
+        ^
+../drivers/clocksource/arm_arch_timer.c:1557:2: note: did you mean 'get_timer_count_hook_init'?
+../drivers/clocksource/arm_arch_timer.c:1556:2: note: 'get_timer_count_hook_init' declared here
+        get_timer_count_hook_init();
+        ^
+2 errors generated.
+make[3]: *** [../scripts/Makefile.build:338: drivers/clocksource/arm_arch_timer.o] Error 1
+make[2]: *** [../scripts/Makefile.build:642: drivers/clocksource] Error 2
+make[2]: *** Waiting for unfinished jobs....
+  CC      drivers/cpuidle/cpuidle.o
+../drivers/clk/qcom/clk-rcg2.c:248:9: error: use of undeclared identifier 'tmp'
+        return tmp;
+               ^
+1 error generated.
+make[4]: *** [../scripts/Makefile.build:338: drivers/clk/qcom/clk-rcg2.o] Error 1
+make[3]: *** [../scripts/Makefile.build:642: drivers/clk/qcom] Error 2
+make[2]: *** [../scripts/Makefile.build:642: drivers/clk] Error 2
+  CC      drivers/char/misc.o
+  CC      drivers/cpuidle/driver.o
+  AR      drivers/cpuidle/governors/built-in.a
+  CC      drivers/cpuidle/governor.o
+  CC      drivers/char/adsprpc.o
+  CC      drivers/char/adsprpc_compat.o
+  CC      drivers/cpuidle/sysfs.o
+  CC      drivers/cpufreq/cpufreq_stats.o
+  CC      drivers/cpuidle/dt_idle_states.o
+  CC      drivers/cpufreq/cpufreq_times.o
+  CC      drivers/cpuidle/cpuidle-arm.o
+  CC      drivers/cpufreq/cpufreq_performance.o
+  CC      drivers/cpufreq/cpufreq_powersave.o
+  CC      drivers/cpuidle/lpm-levels.o
+  CC      drivers/cpufreq/cpufreq_userspace.o
+  CC      drivers/cpufreq/cpufreq_ondemand.o
+  CC      drivers/cpuidle/lpm-levels-of.o
+  CC      drivers/cpufreq/cpufreq_conservative.o
+  CC      drivers/cpufreq/cpufreq_governor.o
+  CC      drivers/cpufreq/cpufreq_governor_attr_set.o
+  CC      drivers/cpufreq/cpu-boost.o
+  CC      drivers/cpufreq/qcom-cpufreq-hw.o
+  AR      drivers/cpufreq/built-in.a
+  AR      drivers/cpuidle/built-in.a
+  AR      drivers/char/built-in.a
+make[1]: *** [/home/konadev/android_kernel_lge_sm8250/Makefile:1221: drivers] Error 2
+make: *** [Makefile:153: sub-make] Error 2

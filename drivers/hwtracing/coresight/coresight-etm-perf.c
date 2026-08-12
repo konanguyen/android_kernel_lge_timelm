@@ -142,7 +142,6 @@ static void free_event_data(struct work_struct *work)
 	int cpu;
 	cpumask_t *mask;
 	struct etm_event_data *event_data;
-	struct coresight_device *source;
 
 	event_data = container_of(work, struct etm_event_data, work);
 	mask = &event_data->mask;
@@ -154,9 +153,8 @@ static void free_event_data(struct work_struct *work)
 		struct list_head **ppath;
 
 		ppath = etm_event_cpu_path_ptr(event_data, cpu);
-		source = coresight_get_source(*ppath);
 		if (!(IS_ERR_OR_NULL(*ppath)))
-			coresight_release_path(source, *ppath);
+			coresight_release_path(*ppath);
 		*ppath = NULL;
 	}
 
@@ -501,7 +499,7 @@ int etm_perf_symlink(struct coresight_device *csdev, bool link)
 	struct device *pmu_dev = etm_pmu.dev;
 	struct device *cs_dev = &csdev->dev;
 
-	scnprintf(entry, PAGE_SIZE, "cpu%d", cpu);
+	sprintf(entry, "cpu%d", cpu);
 
 	if (!etm_perf_up)
 		return -EPROBE_DEFER;

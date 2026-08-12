@@ -1,0 +1,111 @@
+  GEN     ./Makefile
+  Using .. as source for kernel
+  CALL    ../scripts/checksyscalls.sh
+  CHK     include/generated/compile.h
+  CHK     kernel/kheaders_data.tar.xz
+  COPY    firmware/almf04/ALMF04_Sar2CNew_V2.04T.fw
+cp: cannot stat '../firmware/almf04/ALMF04_Sar2CNew_V2.04T.fw': No such file or directory
+make[2]: *** [../firmware/Makefile:77: firmware/almf04/ALMF04_Sar2CNew_V2.04T.fw] Error 1
+make[1]: *** [/home/konadev/android_kernel_lge_sm8250/Makefile:1221: firmware] Error 2
+make[1]: *** Waiting for unfinished jobs....
+  CC      drivers/dma-buf/dma-buf.o
+  CC      drivers/edac/edac_mc.o
+  CC      drivers/dma-buf/dma-fence.o
+  CC      drivers/edac/edac_device.o
+  CC      drivers/dma-buf/dma-fence-array.o
+  CC      drivers/clk/clk.o
+  CC      drivers/dma-buf/reservation.o
+  CC      drivers/edac/edac_mc_sysfs.o
+../drivers/clk/clk.c:3267:2: error: expected identifier or '('
+        if (!clk->core->ops->set_flags)
+        ^
+../drivers/clk/clk.c:3270:2: error: expected identifier or '('
+        return clk->core->ops->set_flags(clk->core->hw, flags);
+        ^
+../drivers/clk/clk.c:3271:1: error: extraneous closing brace ('}')
+}
+^
+../drivers/clk/clk.c:3272:1: error: redefinition of '__kstrtab_clk_set_flags'
+EXPORT_SYMBOL_GPL(clk_set_flags);
+^
+../include/linux/export.h:127:2: note: expanded from macro 'EXPORT_SYMBOL_GPL'
+        __EXPORT_SYMBOL(sym, "_gpl")
+        ^
+../include/linux/export.h:120:25: note: expanded from macro '__EXPORT_SYMBOL'
+#define __EXPORT_SYMBOL ___EXPORT_SYMBOL
+                        ^
+../include/linux/export.h:81:20: note: expanded from macro '___EXPORT_SYMBOL'
+        static const char __kstrtab_##sym[]                             \
+                          ^
+<scratch space>:86:1: note: expanded from here
+__kstrtab_clk_set_flags
+^
+../drivers/clk/clk.c:3258:1: note: previous definition is here
+EXPORT_SYMBOL_GPL(clk_set_flags);
+^
+../include/linux/export.h:127:2: note: expanded from macro 'EXPORT_SYMBOL_GPL'
+        __EXPORT_SYMBOL(sym, "_gpl")
+        ^
+../include/linux/export.h:120:25: note: expanded from macro '__EXPORT_SYMBOL'
+#define __EXPORT_SYMBOL ___EXPORT_SYMBOL
+                        ^
+../include/linux/export.h:81:20: note: expanded from macro '___EXPORT_SYMBOL'
+        static const char __kstrtab_##sym[]                             \
+                          ^
+<scratch space>:62:1: note: expanded from here
+__kstrtab_clk_set_flags
+^
+../drivers/clk/clk.c:3711:6: error: redefinition of 'clk_debug_print_hw'
+void clk_debug_print_hw(struct clk_core *clk, struct seq_file *f)
+     ^
+../drivers/clk/clk.c:3260:6: note: previous definition is here
+void clk_debug_print_hw(struct clk_core *clk, struct seq_file *f)
+     ^
+../drivers/clk/clk.c:3725:1: error: redefinition of '__kstrtab_clk_debug_print_hw'
+EXPORT_SYMBOL(clk_debug_print_hw);
+^
+../include/linux/export.h:124:2: note: expanded from macro 'EXPORT_SYMBOL'
+        __EXPORT_SYMBOL(sym, "")
+        ^
+../include/linux/export.h:120:25: note: expanded from macro '__EXPORT_SYMBOL'
+#define __EXPORT_SYMBOL ___EXPORT_SYMBOL
+                        ^
+../include/linux/export.h:81:20: note: expanded from macro '___EXPORT_SYMBOL'
+        static const char __kstrtab_##sym[]                             \
+                          ^
+<scratch space>:190:1: note: expanded from here
+__kstrtab_clk_debug_print_hw
+^
+../drivers/clk/clk.c:3263:1: note: previous definition is here
+EXPORT_SYMBOL(clk_debug_print_hw);
+^
+../include/linux/export.h:124:2: note: expanded from macro 'EXPORT_SYMBOL'
+        __EXPORT_SYMBOL(sym, "")
+        ^
+../include/linux/export.h:120:25: note: expanded from macro '__EXPORT_SYMBOL'
+#define __EXPORT_SYMBOL ___EXPORT_SYMBOL
+                        ^
+../include/linux/export.h:81:20: note: expanded from macro '___EXPORT_SYMBOL'
+        static const char __kstrtab_##sym[]                             \
+                          ^
+<scratch space>:74:1: note: expanded from here
+__kstrtab_clk_debug_print_hw
+^
+6 errors generated.
+make[3]: *** [../scripts/Makefile.build:338: drivers/clk/clk.o] Error 1
+make[2]: *** [../scripts/Makefile.build:642: drivers/clk] Error 2
+make[2]: *** Waiting for unfinished jobs....
+  CC      drivers/edac/edac_module.o
+  CC      drivers/dma-buf/seqno-fence.o
+  CC      drivers/edac/edac_device_sysfs.o
+  CC      drivers/edac/wq.o
+  CC      drivers/edac/edac_pci.o
+  CC      drivers/edac/edac_pci_sysfs.o
+  CC      drivers/edac/kryo_arm64_edac.o
+  CC      drivers/edac/qcom_edac.o
+  CC      drivers/dma-buf/sync_file.o
+  CC      drivers/dma-buf/dma-buf-ref.o
+  AR      drivers/edac/built-in.a
+  AR      drivers/dma-buf/built-in.a
+make[1]: *** [/home/konadev/android_kernel_lge_sm8250/Makefile:1221: drivers] Error 2
+make: *** [Makefile:153: sub-make] Error 2
