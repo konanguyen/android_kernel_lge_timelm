@@ -370,7 +370,6 @@ int fscrypt_fname_disk_to_usr(const struct inode *inode,
 	if (fscrypt_has_encryption_key(inode))
 		return fname_decrypt(inode, iname, oname);
 
-<<<<<<< HEAD
 	/*
 	 * Sanity check that struct fscrypt_nokey_name doesn't have padding
 	 * between fields and that its encoded size never exceeds NAME_MAX.
