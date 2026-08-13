@@ -134,3 +134,6 @@ all.config
 
 # Build output
 /out/
+
+# Agent configuration
+/.agents/
