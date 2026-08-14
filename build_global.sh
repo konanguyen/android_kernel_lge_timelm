@@ -30,5 +30,6 @@ echo
 echo "Build The Good Stuff"
 echo 
 
-make CC=clang AR=llvm-ar NM=llvm-nm OBJCOPY=${CROSS_COMPILE}objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip O=out -j$(nproc --all) 2>&1 | tee out/build.log
+make CC=clang AR=llvm-ar NM=llvm-nm OBJCOPY=${CROSS_COMPILE}objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip O=out V=1 -j$(nproc --all) 2>&1 | tee out/build.log
+
 
