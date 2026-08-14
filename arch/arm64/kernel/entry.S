@@ -87,6 +87,8 @@
 	.endif
 .Lskip_tramp_vectors_cleanup\@:
 	.endif
+#endif
+
 
 
 	sub	sp, sp, #S_FRAME_SIZE
