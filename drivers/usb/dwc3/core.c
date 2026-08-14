@@ -137,12 +137,6 @@ void dwc3_set_prtcap(struct dwc3 *dwc, u32 mode)
 
 void dwc3_en_sleep_mode(struct dwc3 *dwc)
 {
-<<<<<<< HEAD
-=======
-	struct dwc3 *dwc = work_to_dwc(work);
-	unsigned long flags;
-	int ret;
->>>>>>> a3177057f6dc (usb: dwc3: Add splitdisable quirk for Hisilicon Kirin Soc)
 	u32 reg;
 
 	if (dwc->dis_enblslpm_quirk)
