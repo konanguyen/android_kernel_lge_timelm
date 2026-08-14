@@ -1422,7 +1422,7 @@ int timer_delete_sync(struct timer_list *timer)
 	lock_map_release(&timer->lockdep_map);
 	local_irq_restore(flags);
 #endif
-	/*
+
 	WARN_ON(in_irq() && !(timer->flags & TIMER_IRQSAFE));
 
 	do {
@@ -1453,22 +1453,23 @@ static void call_timer_fn(struct timer_list *timer,
 	 * warnings as well as problems when looking into
 	 * timer->lockdep_map, make a copy and use that here.
 	 */
-	struct lockdep_map lockdep_map;
+	struct lockdep_map lockdep_map = timer->lockdep_map;
 
-	lockdep_copy_map(&lockdep_map, &timer->lockdep_map);
-#endif
 	/*
 	 * Couple the lock chain with the lock chain at
 	 * timer_delete_sync() by acquiring the lock_map around the fn()
 	 * call here and in timer_delete_sync().
 	 */
 	lock_map_acquire(&lockdep_map);
+#endif
 
 	trace_timer_expire_entry(timer, baseclk);
 	fn(timer);
 	trace_timer_expire_exit(timer);
 
+#ifdef CONFIG_LOCKDEP
 	lock_map_release(&lockdep_map);
+#endif
 
 	if (count != preempt_count()) {
 		WARN_ONCE(1, "timer: %pF preempt leak: %08x -> %08x\n",
