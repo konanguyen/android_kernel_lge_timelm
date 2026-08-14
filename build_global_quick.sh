@@ -18,7 +18,8 @@ export CROSS_COMPILE_ARM32=/home/konadev/toolchains/arm-linux-gnueabi/bin/arm-li
 echo
 echo "Set DEFCONFIG"
 echo 
-make CC=clang AR=llvm-ar NM=llvm-nm OBJCOPY=${CROSS_COMPILE}objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip O=out ARCH=arm64 SUBARCH=arm64 vendor/timelm-perf_defconfig -j$(nproc --all)
+make CC=clang AR=llvm-ar NM=llvm-nm OBJCOPY=${CROSS_COMPILE}objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip O=out ARCH=arm64 SUBARCH=arm64 vendor/timelm-perf-ksu_defconfig -j$(nproc --all)
+
 
 echo
 echo "Build The Good Stuff"
