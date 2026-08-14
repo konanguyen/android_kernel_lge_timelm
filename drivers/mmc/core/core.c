@@ -333,9 +333,9 @@ static bool mmc_is_valid_state_for_clk_scaling(struct mmc_host *host)
 	 * this mode.
 	 */
 	if (!card || (mmc_card_mmc(card) &&
-			(card->part_curr == EXT_CSD_PART_CONFIG_ACC_RPMB ||
-			mmc_card_doing_bkops(card))))
+			card->part_curr == EXT_CSD_PART_CONFIG_ACC_RPMB))
 		return false;
+
 
 	if (mmc_send_status(card, &status)) {
 		pr_err("%s: Get card status fail\n", mmc_hostname(card->host));
