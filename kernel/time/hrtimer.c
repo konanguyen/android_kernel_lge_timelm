@@ -1902,7 +1902,6 @@ int hrtimers_prepare_cpu(unsigned int cpu)
 	}
 
 	cpu_base->cpu = cpu;
-	hrtimer_cpu_base_init_expiry_lock(cpu_base);
 	return 0;
 }
 
