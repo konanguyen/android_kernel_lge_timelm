@@ -3165,7 +3165,9 @@ static bool dwc3_gadget_ep_request_completed(struct dwc3_request *req)
 static int dwc3_gadget_ep_cleanup_completed_request(struct dwc3_ep *dep,
 		const struct dwc3_event_depevt *event,
 		struct dwc3_request *req, int status)
+{
 	struct dwc3 *dwc = dep->dwc;
+
 	int request_status;
 
 	int ret;
