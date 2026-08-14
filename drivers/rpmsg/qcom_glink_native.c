@@ -141,37 +141,35 @@ struct glink_core_rx_intent {
 struct qcom_glink {
 	struct device *dev;
 
-	struct qcom_glink_pipe *rx_pipe;
-	struct qcom_glink_pipe *tx_pipe;
-
-	struct irq_chip irq_chip;
-	struct irq_domain *irq_domain;
-
-	struct spinlock lock;
-
-	struct idr lcids;
-	struct idr rcids;
-	struct spinlock idr_lock;
-
-	struct list_head rx_queue;
-	struct spinlock rx_lock;
-
-	struct work_struct rx_work;
-#ifdef CONFIG_LGE_PM
-	struct work_struct irq_work;
-#endif
-
-	struct mutex tx_lock;
-
-	enum glink_focus focus;
+	const char *name;
 
 	struct mbox_client mbox_client;
 	struct mbox_chan *mbox_chan;
 
-	struct list_head node;
-	struct completion node_created;
-	struct completion open_ack;
+	struct qcom_glink_pipe *rx_pipe;
+	struct qcom_glink_pipe *tx_pipe;
 
+	int irq;
+	char irqname[GLINK_NAME_SIZE];
+
+	struct kthread_worker kworker;
+	struct task_struct *task;
+
+	struct work_struct rx_work;
+
+#ifdef CONFIG_LGE_PM
+	struct work_struct irq_work;
+#endif
+	spinlock_t rx_lock;
+	struct list_head rx_queue;
+
+	spinlock_t tx_lock;
+
+	spinlock_t idr_lock;
+	struct idr lcids;
+	struct idr rcids;
+
+	atomic_t in_reset;
 	unsigned long features;
 
 	bool intentless;
