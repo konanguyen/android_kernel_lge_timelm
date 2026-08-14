@@ -2,6 +2,11 @@
 #ifndef __VDSO_BITS_H
 #define __VDSO_BITS_H
 
-#define BIT(nr)			(1UL << (nr))
+#include <linux/const.h>
+
+#ifndef BIT
+#define BIT(nr)			(UL(1) << (nr))
+#endif
+
 
 #endif	/* __VDSO_BITS_H */

@@ -590,10 +590,10 @@ static int ovl_create_or_link(struct dentry *dentry, struct inode *inode,
 			goto out_revert_creds;
 		}
 
-		}
 		hold_cred = override_creds(override_cred);
 		put_cred(override_cred);
 	}
+
 
 	if (!ovl_dentry_is_whiteout(dentry))
 		err = ovl_create_upper(dentry, inode, attr);
