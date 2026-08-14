@@ -75,7 +75,6 @@ int tcp_use_userconfig_sysctl_handler(struct ctl_table *table, int write,
 	return ret;
 }
 
-}
 
 /**
  *  tcp_write_err() - close socket and save error info
