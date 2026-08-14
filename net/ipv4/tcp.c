@@ -2821,7 +2821,6 @@ int tcp_disconnect(struct sock *sk, int flags)
 	if (!(sk->sk_userlocks & SOCK_BINDADDR_LOCK))
 		inet_reset_saddr(sk);
 
-<<<<<<< HEAD
 #ifdef CONFIG_LGP_DATA_TCPIP_MPTCP
 	if (is_meta_sk(sk)) {
 		mptcp_disconnect(sk);
@@ -2831,10 +2830,8 @@ int tcp_disconnect(struct sock *sk, int flags)
 	}
 #endif
 
-	sk->sk_shutdown = 0;
-=======
 	WRITE_ONCE(sk->sk_shutdown, 0);
->>>>>>> 35e4f2bc17 (tcp: add annotations around sk->sk_shutdown accesses)
+
 	sock_reset_flag(sk, SOCK_DONE);
 	tp->srtt_us = 0;
 	tp->rcv_rtt_last_tsecr = 0;
