@@ -711,6 +711,8 @@ static const struct midr_range arm64_harden_el2_vectors[] = {
 	{},
 };
 
+#endif
+
 #ifdef CONFIG_ARM64_ERRATUM_858921
 
 static const struct midr_range arm64_workaround_858921_cpus[] = {
