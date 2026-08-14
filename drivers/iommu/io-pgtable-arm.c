@@ -203,6 +203,10 @@
 #define pfn_to_iopte(pfn, d)					\
 	(((pfn) << (d)->pg_shift) & ((1ULL << ARM_LPAE_MAX_ADDR_BITS) - 1))
 
+#define paddr_to_iopte(paddr, d)				\
+	((paddr) & ((1ULL << ARM_LPAE_MAX_ADDR_BITS) - 1))
+
+
 struct arm_lpae_io_pgtable {
 	struct io_pgtable	iop;
 
